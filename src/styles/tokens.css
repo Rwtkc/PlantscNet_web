@@ -14,6 +14,10 @@
   --accent: #2f8f57;
   --accent-deep: #1f6f41;
   --accent-soft: #bee5c8;
+  --scrollbar-track: rgba(228, 241, 223, 0.82);
+  --scrollbar-thumb: rgba(122, 182, 132, 0.92);
+  --scrollbar-thumb-hover: rgba(82, 153, 94, 0.96);
+  --scrollbar-thumb-active: rgba(54, 122, 71, 0.98);
   --shadow-main: 0 18px 40px rgba(24, 78, 47, 0.16);
   --radius-lg: 20px;
   --radius-md: 14px;

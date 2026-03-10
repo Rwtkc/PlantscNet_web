@@ -12,6 +12,9 @@ dist
 coverage
 dist-ssr
 *.local
+plantscnetweb.jsonl
+public/data/
+docs/plans/
 
 # Editor directories and files
 .vscode/*
