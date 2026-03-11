@@ -1,0 +1,120 @@
+.app-shell {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 1.2rem;
+  border: 0;
+  border-radius: 0;
+  background: rgba(244, 250, 236, 0.78);
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.6rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand__mark {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  object-fit: contain;
+}
+
+.brand__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.03em;
+}
+
+.brand__caption {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.topbar__nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-height: 2.375rem;
+  padding: 0 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.nav-link__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  flex-shrink: 0;
+}
+
+.nav-link__icon-svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.nav-link:hover {
+  color: var(--text-strong);
+  background: rgba(245, 255, 242, 0.95);
+  border-color: var(--line-soft);
+}
+
+.nav-link--active {
+  color: var(--text-strong);
+  border-color: rgba(25, 95, 52, 0.35);
+  background: linear-gradient(135deg, rgba(217, 240, 215, 0.95), rgba(232, 247, 225, 1));
+}
+
+.content-wrap {
+  margin-top: 1.4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-note {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(21, 75, 41, 0.14);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-align: center;
+  white-space: nowrap;
+}
+

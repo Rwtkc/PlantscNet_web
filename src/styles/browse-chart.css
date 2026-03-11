@@ -1,0 +1,149 @@
+.browse-pie-layout {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.85rem;
+}
+
+.browse-pie-chart {
+  position: relative;
+  width: min(100%, 14.75rem);
+  aspect-ratio: 1;
+  border-radius: 999rem;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at center, rgba(226, 241, 219, 0.18), transparent 68%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.48),
+    0 0.95rem 1.6rem -1.25rem rgba(24, 76, 42, 0.34);
+}
+
+.browse-pie-chart__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.browse-pie-sector {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease;
+  animation: browsePieSectorReveal 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  stroke: rgba(250, 253, 247, 0.94);
+  stroke-width: 1.4;
+}
+
+.browse-pie-chart:hover .browse-pie-sector,
+.browse-pie-chart:focus-within .browse-pie-sector {
+  opacity: 0.66;
+}
+
+.browse-pie-sector--active {
+  opacity: 1 !important;
+  transform: translate(var(--sector-shift-x), var(--sector-shift-y)) scale(1.06);
+  filter: saturate(1.14) brightness(1.1) drop-shadow(0 0.55rem 0.85rem rgba(24, 76, 42, 0.22));
+}
+
+.browse-pie-chart__center-text {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  gap: 0.12rem;
+  width: 5.9rem;
+  transform: translate(-50%, -50%);
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.browse-pie-chart__center-text strong {
+  font-family: var(--font-display);
+  font-size: 1.82rem;
+  line-height: 1;
+}
+
+.browse-pie-chart__center-text span {
+  color: var(--text-muted);
+  display: grid;
+  justify-items: center;
+  font-size: 0.8rem;
+  line-height: 1.05;
+}
+
+.browse-pie-chart__center-text--long {
+  width: 6.2rem;
+}
+
+.browse-pie-chart__center-text--long strong {
+  font-size: 1.72rem;
+}
+
+.browse-pie-chart__center-text--long span {
+  font-size: 0.74rem;
+}
+
+.browse-pie-chart__center-line {
+  display: block;
+}
+
+.browse-pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.browse-pie-legend li {
+  margin: 0;
+}
+
+.browse-pie-legend__button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  border: 1px solid rgba(20, 78, 44, 0.08);
+  border-radius: 0.8rem;
+  background: rgba(247, 251, 243, 0.9);
+  padding: 0.45rem 0.6rem;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.browse-pie-legend__button:hover,
+.browse-pie-legend__button:focus-visible,
+.browse-pie-legend__button--active {
+  border-color: rgba(31, 111, 65, 0.22);
+  background: rgba(238, 248, 232, 0.96);
+  box-shadow: 0 0.8rem 1.35rem -1.2rem rgba(28, 83, 48, 0.44);
+  transform: translateX(0.08rem);
+}
+
+.browse-pie-legend__swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999rem;
+}
+
+.browse-pie-legend__label {
+  font-weight: 600;
+}
+
+.browse-pie-legend__value {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}

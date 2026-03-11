@@ -1,29 +1,27 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { speciesById, speciesCatalog } from '../species.js'
-
-const canonicalTissueLabels = new Map([
-  ['root', 'Root'],
-  ['leaf', 'Leaf'],
-  ['rosette leaf', 'Rosette leaf'],
-  ['callus', 'Callus'],
-  ['ear', 'Ear'],
-  ['embryo', 'Embryo'],
-  ['endosperm', 'Endosperm'],
-  ['meiotic cells', 'Meiotic Cells'],
-  ['nodule', 'Nodule'],
-  ['opposite sdx cells', 'Opposite SDX cells'],
-  ['shoot apical meristem', 'Shoot Apical Meristem'],
-  ['tension sdx cells', 'Tension SDX cells'],
-  ['vertical sdx cells', 'Vertical SDX cells'],
-  ['young inflorescences', 'Young inflorescences'],
-])
+import {
+  parseRegulatoryNetworkRows,
+  parseSampleInformation,
+  parseSampleInformationLine,
+  parseSampleTfTargetNetworkRows,
+  parseTfTargetCount,
+  parseTfTargetRows,
+} from './browse-data-parsers.js'
 
 let resolvedDataRootPromise
 let resolvedSpeciesMetaRootPromise
 let browseIndexPromise
 const speciesTfTargetCountsCache = new Map()
 const sampleDetailCache = new Map()
+const speciesNetworkRowsCache = new Map()
+const speciesNetworkPreviewCache = new Map()
+const sampleNetworkRowsCache = new Map()
+const sampleNetworkPreviewCache = new Map()
+const speciesNetworkRelationsCache = new Map()
+const defaultNetworkThreshold = 0.5
+const singleSampleRecommendedThresholdQuantile = 0.75
 
 function normalizePositiveInteger(value, fallback) {
   const numericValue = Number.parseInt(String(value ?? ''), 10)
@@ -35,135 +33,133 @@ function normalizePositiveInteger(value, fallback) {
   return fallback
 }
 
-function formatTissueLabel(rawTissue) {
-  const normalized = rawTissue.trim().replace(/\s+/g, ' ').toLowerCase()
-  const canonical = canonicalTissueLabels.get(normalized)
+function roundNetworkThreshold(value) {
+  return Number(value.toFixed(2))
+}
 
-  if (canonical) {
-    return canonical
+function calculateQuantile(sortedValues, quantile) {
+  if (sortedValues.length === 0) {
+    return Number.NaN
   }
 
-  return normalized.replace(/\b\w/g, (character) => character.toUpperCase())
+  const safeQuantile = Math.min(Math.max(quantile, 0), 1)
+  const position = (sortedValues.length - 1) * safeQuantile
+  const lowerIndex = Math.floor(position)
+  const upperIndex = Math.ceil(position)
+
+  if (lowerIndex === upperIndex) {
+    return sortedValues[lowerIndex]
+  }
+
+  const fraction = position - lowerIndex
+
+  return (
+    sortedValues[lowerIndex] * (1 - fraction) + sortedValues[upperIndex] * fraction
+  )
 }
 
-function isGeoAccession(value) {
-  return /^(?:GSM|GSE|GPL)\d+$/i.test(value)
+function resolveRecommendedNetworkThreshold(source) {
+  if (source.sourceKind !== 'single-sample') {
+    return defaultNetworkThreshold
+  }
+
+  const finiteScores = source.rows
+    .map((row) => row.probability)
+    .filter((score) => Number.isFinite(score) && score >= 0)
+    .sort((left, right) => left - right)
+
+  if (finiteScores.length === 0) {
+    return defaultNetworkThreshold
+  }
+
+  const quantileValue = calculateQuantile(
+    finiteScores,
+    singleSampleRecommendedThresholdQuantile,
+  )
+
+  if (!Number.isFinite(quantileValue)) {
+    return defaultNetworkThreshold
+  }
+
+  return Math.max(defaultNetworkThreshold, roundNetworkThreshold(quantileValue))
 }
 
-function isPrimarySampleAccession(value) {
-  return /^(?:SRX|SRP|SRS|ERX|ERP|ERS|DRX|DRP|DRS|CRX|CRR)\d+$/i.test(value)
+function compareNetworkRowProbability(left, right) {
+  const leftProbability = Number.isFinite(left.probability)
+    ? left.probability
+    : Number.NEGATIVE_INFINITY
+  const rightProbability = Number.isFinite(right.probability)
+    ? right.probability
+    : Number.NEGATIVE_INFINITY
+
+  return rightProbability - leftProbability
 }
 
-function resolveSampleId(fileName, sampleTokens) {
-  if (sampleTokens.length === 0) {
+async function loadSpeciesNetworkRows(speciesId) {
+  const species = speciesById.get(speciesId)
+
+  if (!species) {
     return null
   }
 
-  const fileStem = path.basename(fileName, path.extname(fileName))
+  const dataRoot = await getDataRoot()
+  const networkPath = path.join(dataRoot, speciesId, 'final_regulatory_with_probability.tsv')
+  const { samples } = await getBrowseIndex()
+  const speciesSamples = samples.filter((record) => record.speciesId === speciesId)
 
-  if (sampleTokens.length >= 2 && sampleTokens[1] === fileStem) {
+  try {
+    const content = await fs.readFile(networkPath, 'utf8')
     return {
-      sampleId: sampleTokens[1],
-      tissueTokens: sampleTokens.slice(2),
+      sourceKind: 'species-preview',
+      rows: parseRegulatoryNetworkRows(content, Number.MAX_SAFE_INTEGER),
     }
-  }
-
-  if (
-    sampleTokens.length >= 2 &&
-    isGeoAccession(sampleTokens[0]) &&
-    isPrimarySampleAccession(sampleTokens[1])
-  ) {
-    return {
-      sampleId: sampleTokens[1],
-      tissueTokens: sampleTokens.slice(2),
+  } catch {
+    if (speciesSamples.length !== 1) {
+      return null
     }
-  }
 
-  return {
-    sampleId: sampleTokens[0],
-    tissueTokens: sampleTokens.slice(1),
-  }
-}
+    const fallbackPath = path.join(dataRoot, speciesId, speciesSamples[0].fileName)
 
-export function parseSampleInformationLine(species, line) {
-  const tokens = line.trim().split(/\s+/)
-
-  if (tokens.length < 3) {
-    return null
-  }
-
-  const fileName = tokens[0]
-  let remainder = tokens.slice(1)
-  let pubmedId = '-'
-
-  if (
-    remainder.length >= 2 &&
-    /^PMID:?$/i.test(remainder.at(-2) ?? '') &&
-    /^\d+$/.test(remainder.at(-1) ?? '')
-  ) {
-    pubmedId = remainder.at(-1) ?? '-'
-    remainder = remainder.slice(0, -2)
-  } else if (/^\d+$/.test(remainder.at(-1) ?? '')) {
-    pubmedId = remainder.at(-1) ?? '-'
-    remainder = remainder.slice(0, -1)
-  } else if (remainder.at(-1) === '-') {
-    remainder = remainder.slice(0, -1)
-  }
-
-  const sampleResolution = resolveSampleId(fileName, remainder)
-
-  if (!fileName || !sampleResolution?.sampleId || sampleResolution.tissueTokens.length === 0) {
-    return null
-  }
-
-  return {
-    speciesId: species.id,
-    speciesLabel: species.label,
-    fileName,
-    sampleId: sampleResolution.sampleId,
-    tissue: formatTissueLabel(sampleResolution.tissueTokens.join(' ')),
-    pubmedId,
-  }
-}
-
-export function parseSampleInformation(species, content) {
-  return content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => parseSampleInformationLine(species, line))
-    .filter((record) => record !== null)
-}
-
-export function parseTfTargetCount(content) {
-  const rows = content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-
-  return Math.max(rows.length - 1, 0)
-}
-
-export function parseTfTargetRows(content) {
-  return content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(1)
-    .map((line) => {
-      const [tf, target, importanceScore = '-'] = line.split(/\t+/)
-
-      if (!tf || !target) {
-        return null
-      }
-
+    try {
+      const content = await fs.readFile(fallbackPath, 'utf8')
       return {
-        tf,
-        target,
-        importanceScore,
+        sourceKind: 'single-sample',
+        rows: parseSampleTfTargetNetworkRows(content, Number.MAX_SAFE_INTEGER),
       }
-    })
-    .filter((row) => row !== null)
+    } catch {
+      return null
+    }
+  }
+}
+
+async function loadSampleNetworkRows(speciesId, sampleId) {
+  const species = speciesById.get(speciesId)
+
+  if (!species) {
+    return null
+  }
+
+  const { samples } = await getBrowseIndex()
+  const sampleRecord = samples.find(
+    (record) => record.speciesId === speciesId && record.sampleId === sampleId,
+  )
+
+  if (!sampleRecord) {
+    return null
+  }
+
+  const dataRoot = await getDataRoot()
+  const samplePath = path.join(dataRoot, speciesId, sampleRecord.fileName)
+
+  try {
+    const content = await fs.readFile(samplePath, 'utf8')
+    return {
+      sourceKind: 'single-sample',
+      rows: parseSampleTfTargetNetworkRows(content, Number.MAX_SAFE_INTEGER),
+    }
+  } catch {
+    return null
+  }
 }
 
 async function pathExists(targetPath) {
@@ -329,6 +325,255 @@ export async function getSpeciesTfTargetCounts(speciesId) {
   return speciesTfTargetCountsCache.get(speciesId)
 }
 
+async function loadSpeciesNetworkPreview(speciesId, options) {
+  const species = speciesById.get(speciesId)
+
+  if (!species) {
+    return null
+  }
+
+  if (!speciesNetworkRowsCache.has(speciesId)) {
+    speciesNetworkRowsCache.set(speciesId, loadSpeciesNetworkRows(speciesId))
+  }
+
+  const source = await speciesNetworkRowsCache.get(speciesId)
+
+  if (!source) {
+    return null
+  }
+
+  return buildNetworkPreview(speciesId, species.label, source, options)
+}
+
+export async function getSpeciesNetworkPreview(speciesId, options = {}) {
+  if (!speciesById.has(speciesId)) {
+    return null
+  }
+
+  const limit = normalizePositiveInteger(options.limit, 500)
+  const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
+  const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
+  const tfFilter = String(options.tf ?? '').trim().toLowerCase()
+  const cacheKey = `${speciesId}:${limit}:${normalizedThreshold}:${tfFilter}`
+
+  if (!speciesNetworkPreviewCache.has(cacheKey)) {
+    speciesNetworkPreviewCache.set(
+      cacheKey,
+      loadSpeciesNetworkPreview(speciesId, {
+        limit,
+        threshold: normalizedThreshold,
+        tf: tfFilter,
+      }),
+    )
+  }
+
+  return speciesNetworkPreviewCache.get(cacheKey)
+}
+
+function buildFilteredNetworkRows(source, options = {}) {
+  const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
+  const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
+  const rawTfFilter = String(options.tf ?? '').trim()
+  const normalizedTfFilter = rawTfFilter.toLowerCase()
+  const thresholdFilteredRows = source.rows.filter((row) => {
+    const probability = Number.isFinite(row.probability)
+      ? row.probability
+      : Number.NEGATIVE_INFINITY
+
+    return probability >= normalizedThreshold
+  })
+  const filteredRows = !normalizedTfFilter
+    ? thresholdFilteredRows
+    : (() => {
+        const focusedRows = thresholdFilteredRows.filter((row) =>
+          row.source.toLowerCase().includes(normalizedTfFilter),
+        )
+
+        if (focusedRows.length === 0) {
+          return []
+        }
+
+        const focusedNodeIds = new Set()
+
+        focusedRows.forEach((row) => {
+          focusedNodeIds.add(row.source)
+          focusedNodeIds.add(row.target)
+        })
+
+        return thresholdFilteredRows.filter(
+          (row) => focusedNodeIds.has(row.source) && focusedNodeIds.has(row.target),
+        )
+      })()
+
+  return {
+    normalizedThreshold,
+    rawTfFilter,
+    filteredRows,
+  }
+}
+
+function buildNetworkPreview(speciesId, speciesLabel, source, options = {}) {
+  const limit = normalizePositiveInteger(options.limit, 500)
+  const recommendedThreshold = resolveRecommendedNetworkThreshold(source)
+  const { normalizedThreshold, rawTfFilter, filteredRows } = buildFilteredNetworkRows(
+    source,
+    options,
+  )
+  const normalizedTfFilter = rawTfFilter.toLowerCase()
+  const links = !normalizedTfFilter
+    ? filteredRows.slice().sort(compareNetworkRowProbability).slice(0, limit)
+    : (() => {
+        const primaryRows = filteredRows
+          .filter((row) => row.source.toLowerCase().includes(normalizedTfFilter))
+          .sort(compareNetworkRowProbability)
+        const primaryKeys = new Set(
+          primaryRows.map((row) => `${row.source}\t${row.target}\t${row.probability}`),
+        )
+        const secondaryRows = filteredRows
+          .filter((row) => !primaryKeys.has(`${row.source}\t${row.target}\t${row.probability}`))
+          .sort(compareNetworkRowProbability)
+
+        return primaryRows.concat(secondaryRows).slice(0, limit)
+      })()
+  const tfNodeIds = new Set(source.rows.map((row) => row.source))
+  const nodes = new Map()
+
+  links.forEach((link) => {
+    if (!nodes.has(link.source)) {
+      nodes.set(link.source, {
+        id: link.source,
+        type: 'tf',
+      })
+    }
+
+    if (!nodes.has(link.target)) {
+      nodes.set(link.target, {
+        id: link.target,
+        type: tfNodeIds.has(link.target) ? 'tf' : 'target',
+      })
+    }
+  })
+
+  return {
+    speciesId,
+    speciesLabel,
+    sampleId: options.sampleId ?? null,
+    limit,
+    threshold: normalizedThreshold,
+    recommendedThreshold,
+    tfFilter: rawTfFilter || null,
+    sourceKind: source.sourceKind,
+    totalAvailableLinks: filteredRows.length,
+    totalNodes: nodes.size,
+    totalLinks: links.length,
+    nodes: Array.from(nodes.values()),
+    links,
+  }
+}
+
+export async function getSampleNetworkPreview(speciesId, sampleId, options = {}) {
+  if (!speciesById.has(speciesId)) {
+    return null
+  }
+
+  const limit = normalizePositiveInteger(options.limit, 500)
+  const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
+  const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
+  const tfFilter = String(options.tf ?? '').trim().toLowerCase()
+  const rowCacheKey = `${speciesId}:${sampleId}`
+  const previewCacheKey = `${rowCacheKey}:${limit}:${normalizedThreshold}:${tfFilter}`
+
+  if (!sampleNetworkRowsCache.has(rowCacheKey)) {
+    sampleNetworkRowsCache.set(rowCacheKey, loadSampleNetworkRows(speciesId, sampleId))
+  }
+
+  if (!sampleNetworkPreviewCache.has(previewCacheKey)) {
+    sampleNetworkPreviewCache.set(
+      previewCacheKey,
+      (async () => {
+        const species = speciesById.get(speciesId)
+        const source = await sampleNetworkRowsCache.get(rowCacheKey)
+
+        if (!species || !source) {
+          return null
+        }
+
+        return buildNetworkPreview(speciesId, species.label, source, {
+          limit,
+          sampleId,
+          threshold: normalizedThreshold,
+          tf: tfFilter,
+        })
+      })(),
+    )
+  }
+
+  return sampleNetworkPreviewCache.get(previewCacheKey)
+}
+
+export async function getSpeciesNetworkRelations(speciesId, options = {}) {
+  if (!speciesById.has(speciesId)) {
+    return null
+  }
+
+  const pageSize = normalizePositiveInteger(options.pageSize, 12)
+  const page = normalizePositiveInteger(options.page, 1)
+  const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
+  const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
+  const tfFilter = String(options.tf ?? '').trim().toLowerCase()
+  const cacheKey = `${speciesId}:${page}:${pageSize}:${normalizedThreshold}:${tfFilter}`
+
+  if (!speciesNetworkRowsCache.has(speciesId)) {
+    speciesNetworkRowsCache.set(speciesId, loadSpeciesNetworkRows(speciesId))
+  }
+
+  if (!speciesNetworkRelationsCache.has(cacheKey)) {
+    speciesNetworkRelationsCache.set(
+      cacheKey,
+      (async () => {
+        const species = speciesById.get(speciesId)
+        const source = await speciesNetworkRowsCache.get(speciesId)
+
+        if (!species || !source) {
+          return null
+        }
+
+        const { normalizedThreshold: safeThreshold, rawTfFilter, filteredRows } =
+          buildFilteredNetworkRows(source, {
+            threshold: normalizedThreshold,
+            tf: tfFilter,
+          })
+        const sortedRows = filteredRows.slice().sort(compareNetworkRowProbability)
+        const totalRows = sortedRows.length
+        const totalPages = Math.max(Math.ceil(totalRows / pageSize), 1)
+        const safePage = Math.min(page, totalPages)
+        const start = (safePage - 1) * pageSize
+
+        return {
+          speciesId,
+          speciesLabel: species.label,
+          threshold: safeThreshold,
+          tfFilter: rawTfFilter || null,
+          sourceKind: source.sourceKind,
+          pagination: {
+            page: safePage,
+            pageSize,
+            totalRows,
+            totalPages,
+          },
+          rows: sortedRows.slice(start, start + pageSize).map((row) => ({
+            tf: row.source,
+            target: row.target,
+            probability: row.probability,
+          })),
+        }
+      })(),
+    )
+  }
+
+  return speciesNetworkRelationsCache.get(cacheKey)
+}
+
 async function loadSampleDetail(speciesId, sampleId) {
   const species = speciesById.get(speciesId)
 
@@ -431,4 +676,9 @@ export function __resetBrowseDataCacheForTests() {
   browseIndexPromise = undefined
   speciesTfTargetCountsCache.clear()
   sampleDetailCache.clear()
+  speciesNetworkRowsCache.clear()
+  speciesNetworkPreviewCache.clear()
+  sampleNetworkRowsCache.clear()
+  sampleNetworkPreviewCache.clear()
+  speciesNetworkRelationsCache.clear()
 }
