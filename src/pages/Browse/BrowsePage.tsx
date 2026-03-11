@@ -9,6 +9,7 @@ import {
   prefetchSpeciesNetworkRelations,
 } from './browse.api'
 import { defaultNetworkLimit, defaultNetworkThreshold } from './browse.constants'
+import { readBrowseSessionState, writeBrowseSessionState } from './browse.storage'
 import type {
   BrowseMode,
   DetailViewContent,
@@ -31,13 +32,23 @@ import { useBrowseIndexData, useSampleDetailData, useSpeciesDetailData } from '.
 export { __resetBrowsePageCacheForTests }
 
 export default function BrowsePage() {
+  const initialBrowseStateRef = useRef(readBrowseSessionState())
+  const initialBrowseState = initialBrowseStateRef.current
   const sampleDetailPageSize = 10
   const speciesRelationsPageSize = 12
-  const [browseMode, setBrowseMode] = useState<BrowseMode>('species')
-  const [selectedSpeciesLabel, setSelectedSpeciesLabel] = useState<string | null>(null)
-  const [expandedSpecies, setExpandedSpecies] = useState<string | null>(null)
-  const [expandedTissue, setExpandedTissue] = useState<string | null>(null)
-  const [selectedSampleKey, setSelectedSampleKey] = useState<string | null>(null)
+  const [browseMode, setBrowseMode] = useState<BrowseMode>(initialBrowseState?.browseMode ?? 'species')
+  const [selectedSpeciesLabel, setSelectedSpeciesLabel] = useState<string | null>(
+    initialBrowseState?.selectedSpeciesLabel ?? null,
+  )
+  const [expandedSpecies, setExpandedSpecies] = useState<string | null>(
+    initialBrowseState?.expandedSpecies ?? null,
+  )
+  const [expandedTissue, setExpandedTissue] = useState<string | null>(
+    initialBrowseState?.expandedTissue ?? null,
+  )
+  const [selectedSampleKey, setSelectedSampleKey] = useState<string | null>(
+    initialBrowseState?.selectedSampleKey ?? null,
+  )
   const [sampleNetworkPreview, setSampleNetworkPreview] = useState<SpeciesNetworkPreviewResponse | null>(null)
   const [sampleNetworkPreviewError, setSampleNetworkPreviewError] = useState<string | null>(null)
   const [isLoadingSampleNetworkPreview, setIsLoadingSampleNetworkPreview] = useState(false)
@@ -47,13 +58,26 @@ export default function BrowsePage() {
   const [speciesNetworkRelations, setSpeciesNetworkRelations] = useState<SpeciesNetworkRelationsResponse | null>(null)
   const [speciesNetworkRelationsError, setSpeciesNetworkRelationsError] = useState<string | null>(null)
   const [isLoadingSpeciesNetworkRelations, setIsLoadingSpeciesNetworkRelations] = useState(false)
-  const [networkPreviewThreshold, setNetworkPreviewThreshold] = useState(defaultNetworkThreshold)
-  const [networkPreviewLimit, setNetworkPreviewLimit] = useState(defaultNetworkLimit)
-  const [networkTfFilter, setNetworkTfFilter] = useState('')
-  const [hasManualNetworkPreviewThreshold, setHasManualNetworkPreviewThreshold] = useState(false)
-  const [sampleDetailPage, setSampleDetailPage] = useState(1)
-  const [speciesRelationsPage, setSpeciesRelationsPage] = useState(1)
+  const [networkPreviewThreshold, setNetworkPreviewThreshold] = useState(
+    initialBrowseState?.networkPreviewThreshold ?? defaultNetworkThreshold,
+  )
+  const [networkPreviewLimit, setNetworkPreviewLimit] = useState(
+    initialBrowseState?.networkPreviewLimit ?? defaultNetworkLimit,
+  )
+  const [networkTfFilter, setNetworkTfFilter] = useState(initialBrowseState?.networkTfFilter ?? '')
+  const [hasManualNetworkPreviewThreshold, setHasManualNetworkPreviewThreshold] = useState(
+    initialBrowseState?.hasManualNetworkPreviewThreshold ?? false,
+  )
+  const [sampleDetailPage, setSampleDetailPage] = useState(initialBrowseState?.sampleDetailPage ?? 1)
+  const [speciesRelationsPage, setSpeciesRelationsPage] = useState(
+    initialBrowseState?.speciesRelationsPage ?? 1,
+  )
   const { speciesOptions, sampleRecords, isLoading, loadError } = useBrowseIndexData()
+  const skipInitialSamplePageResetRef = useRef(Boolean(initialBrowseState?.selectedSampleKey))
+  const skipInitialSpeciesRelationsResetRef = useRef(Boolean(initialBrowseState?.selectedSpeciesLabel))
+  const skipInitialNetworkResetRef = useRef(
+    Boolean(initialBrowseState?.selectedSampleKey || initialBrowseState?.selectedSpeciesLabel),
+  )
   const speciesNetworkPreviewCacheRef = useRef<Record<string, SpeciesNetworkPreviewResponse>>(
     browsePageCache.speciesNetworkPreviewCacheStore,
   )
@@ -93,19 +117,62 @@ export default function BrowsePage() {
   )
 
   useEffect(() => {
+    if (skipInitialSamplePageResetRef.current) {
+      skipInitialSamplePageResetRef.current = false
+      return
+    }
+
     setSampleDetailPage(1)
   }, [activeSample?.speciesId, activeSample?.sampleId])
 
   useEffect(() => {
+    if (skipInitialSpeciesRelationsResetRef.current) {
+      skipInitialSpeciesRelationsResetRef.current = false
+      return
+    }
+
     setSpeciesRelationsPage(1)
   }, [activeSpecies?.id, networkPreviewThreshold, networkTfFilter])
 
   useEffect(() => {
+    if (skipInitialNetworkResetRef.current) {
+      skipInitialNetworkResetRef.current = false
+      return
+    }
+
     setNetworkPreviewThreshold(defaultNetworkThreshold)
     setNetworkPreviewLimit(defaultNetworkLimit)
     setNetworkTfFilter('')
     setHasManualNetworkPreviewThreshold(false)
   }, [activeSample?.speciesId, activeSample?.sampleId, activeSpecies?.id])
+
+  useEffect(() => {
+    writeBrowseSessionState({
+      browseMode,
+      selectedSpeciesLabel,
+      expandedSpecies,
+      expandedTissue,
+      selectedSampleKey,
+      networkPreviewThreshold,
+      networkPreviewLimit,
+      networkTfFilter,
+      hasManualNetworkPreviewThreshold,
+      sampleDetailPage,
+      speciesRelationsPage,
+    })
+  }, [
+    browseMode,
+    expandedSpecies,
+    expandedTissue,
+    hasManualNetworkPreviewThreshold,
+    networkPreviewLimit,
+    networkPreviewThreshold,
+    networkTfFilter,
+    sampleDetailPage,
+    selectedSampleKey,
+    selectedSpeciesLabel,
+    speciesRelationsPage,
+  ])
 
   const activeNetworkPreview = activeSample ? sampleNetworkPreview : speciesNetworkPreview
 
@@ -506,12 +573,10 @@ export default function BrowsePage() {
         selectedSampleKey={selectedSampleKey}
         onBrowseModeChange={setBrowseMode}
         onSpeciesToggle={(speciesLabel, isExpanded) => {
-          if (isExpanded) {
+          if (isExpanded && selectedSpeciesLabel === speciesLabel) {
             setExpandedSpecies(null)
-            setSelectedSpeciesLabel(speciesLabel)
-            setSelectedSampleKey((current) =>
-              current?.startsWith(`${speciesLabel}|`) ? null : current,
-            )
+            setSelectedSpeciesLabel(null)
+            setSelectedSampleKey(null)
             return
           }
 

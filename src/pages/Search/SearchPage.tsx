@@ -1,235 +1,225 @@
-import { type SyntheticEvent, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { ModulePage } from '@/components/ModulePage'
 import { moduleContent } from '@/app/module-content'
+import { loadSearchSpeciesOptions, searchSpeciesNetwork } from './search.api'
+import type { SearchMode, SearchResponse, SearchSpeciesOption } from './search.types'
+import { SearchModulePanel } from './components/SearchModulePanel'
+import { SearchResultsPanel } from './components/SearchResultsPanel'
 
-interface SearchRecord {
-  id: string
-  tf: string
-  target: string
-  species: string
-  tissue: string
-  confidence: string
+const defaultTfExample = {
+  speciesId: 'ath',
+  query: 'AT2G35530',
 }
 
-const tfCatalog = [
-  'WRKY33',
-  'NAC019',
-  'MYB46',
-  'ERF1',
-  'bZIP60',
-  'SPL9',
-  'ARF7',
-  'HB8',
-  'TCP4',
-  'BES1',
-]
-
-const targetCatalog = [
-  'NPR1',
-  'IAA19',
-  'PIN1',
-  'WOX5',
-  'CESA7',
-  'LOX3',
-  'PR1',
-  'SUC2',
-  'CWINV4',
-  'DREB2A',
-  'SCL3',
-  'GA20OX1',
-]
-
-const speciesCatalog = [
-  'Arabidopsis thaliana',
-  'Glycine max',
-  'Oryza sativa',
-  'Zea mays',
-  'Solanum lycopersicum',
-]
-
-const tissueCatalog = ['Root', 'Leaf', 'Embryo', 'Nodule', 'Callus', 'Endosperm']
-
-const generatedRecords: SearchRecord[] = Array.from({ length: 120 }, (_, index) => {
-  const tf = tfCatalog[index % tfCatalog.length]
-  const target = targetCatalog[(index * 3) % targetCatalog.length]
-  const species = speciesCatalog[index % speciesCatalog.length]
-  const tissue = tissueCatalog[(index * 2) % tissueCatalog.length]
-  const confidence = (0.65 + (index % 25) / 100).toFixed(2)
-
-  return {
-    id: `REC-${String(index + 1)}`,
-    tf,
-    target,
-    species,
-    tissue,
-    confidence,
-  }
-})
-
-function filterRecordsByKeyword(
-  records: SearchRecord[],
-  key: 'tf' | 'target',
-  keyword: string,
-) {
-  const normalized = keyword.trim().toUpperCase()
-  const picked = normalized
-    ? records.filter((record) => record[key].toUpperCase().includes(normalized))
-    : records
-
-  return picked.slice(0, 20)
+const defaultTargetExample = {
+  speciesId: 'ath',
+  query: 'AT2G25460',
 }
 
 export default function SearchPage() {
-  const tfResultRef = useRef<HTMLElement>(null)
-  const targetResultRef = useRef<HTMLElement>(null)
-  const [tfKeyword, setTfKeyword] = useState('')
-  const [targetKeyword, setTargetKeyword] = useState('')
-  const [tfRecords, setTfRecords] = useState<SearchRecord[]>([])
-  const [targetRecords, setTargetRecords] = useState<SearchRecord[]>([])
+  const [speciesOptions, setSpeciesOptions] = useState<SearchSpeciesOption[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [tfSpeciesId, setTfSpeciesId] = useState('')
+  const [targetSpeciesId, setTargetSpeciesId] = useState('')
+  const [tfQuery, setTfQuery] = useState('')
+  const [targetQuery, setTargetQuery] = useState('')
+  const [tfResult, setTfResult] = useState<SearchResponse | null>(null)
+  const [targetResult, setTargetResult] = useState<SearchResponse | null>(null)
+  const [tfError, setTfError] = useState<string | null>(null)
+  const [targetError, setTargetError] = useState<string | null>(null)
+  const [isLoadingTf, setIsLoadingTf] = useState(false)
+  const [isLoadingTarget, setIsLoadingTarget] = useState(false)
   const [tfSearched, setTfSearched] = useState(false)
   const [targetSearched, setTargetSearched] = useState(false)
+  const [activeResultMode, setActiveResultMode] = useState<SearchMode | null>(null)
 
-  const jumpToTable = (element: HTMLElement | null) => {
-    if (!element) return
+  useEffect(() => {
+    let isCancelled = false
 
-    requestAnimationFrame(() => {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }
+    async function loadSpeciesOptions() {
+      try {
+        const options = await loadSearchSpeciesOptions()
 
-  const handleTfSearch = (event: SyntheticEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setTfSearched(true)
-    setTfRecords(filterRecordsByKeyword(generatedRecords, 'tf', tfKeyword))
-    jumpToTable(tfResultRef.current)
-  }
+        if (!isCancelled) {
+          setSpeciesOptions(options)
+          setLoadError(null)
+        }
+      } catch {
+        if (!isCancelled) {
+          setSpeciesOptions([])
+          setLoadError('Species options could not be loaded from the browse index.')
+        }
+      }
+    }
 
-  const handleTargetSearch = (event: SyntheticEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setTargetSearched(true)
-    setTargetRecords(filterRecordsByKeyword(generatedRecords, 'target', targetKeyword))
-    jumpToTable(targetResultRef.current)
-  }
+    loadSpeciesOptions()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
+
+  const handleSearch =
+    (
+      mode: SearchMode,
+      setLoading: (value: boolean) => void,
+      setError: (value: string | null) => void,
+      setResult: (value: SearchResponse | null) => void,
+      setSearched: (value: boolean) => void,
+    ) =>
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      setActiveResultMode(mode)
+      setSearched(true)
+
+      const speciesId = mode === 'tf' ? tfSpeciesId : targetSpeciesId
+      const query = mode === 'tf' ? tfQuery : targetQuery
+
+      if (mode === 'tf') {
+        setTargetResult(null)
+        setTargetError(null)
+        setTargetSearched(false)
+        setIsLoadingTarget(false)
+      } else {
+        setTfResult(null)
+        setTfError(null)
+        setTfSearched(false)
+        setIsLoadingTf(false)
+      }
+
+      if (!speciesId) {
+        setResult(null)
+        setError('Please select a species before searching.')
+        return
+      }
+
+      if (!query.trim()) {
+        setResult(null)
+        setError('Please enter a gene symbol before searching.')
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await searchSpeciesNetwork(speciesId, mode, query)
+        setResult(response)
+      } catch {
+        setResult(null)
+        setError('Search results could not be loaded from the backend.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+  const activeResult =
+    activeResultMode === 'tf'
+      ? {
+          result: tfResult,
+          isLoading: isLoadingTf,
+          error: tfError,
+          searched: tfSearched,
+          modeLabel: 'TF gene',
+        }
+      : activeResultMode === 'target'
+        ? {
+            result: targetResult,
+            isLoading: isLoadingTarget,
+            error: targetError,
+            searched: targetSearched,
+            modeLabel: 'Target gene',
+          }
+        : null
+
+  const shouldShowResults = Boolean(
+    activeResult &&
+      (activeResult.searched || activeResult.isLoading || activeResult.error || activeResult.result),
+  )
 
   return (
-    <ModulePage module={moduleContent.search}>
-      <section className="search-workspace fade-rise">
-        <section className="search-card">
-          <h2>Search by TF</h2>
-          <p>Input transcription factor symbol and jump to TF result table.</p>
-          <form className="search-card__form" onSubmit={handleTfSearch}>
-            <label htmlFor="tf-query" className="sr-only">
-              TF query
-            </label>
-            <input
-              id="tf-query"
-              className="query-input"
-              value={tfKeyword}
-              onChange={(event) => {
-                setTfKeyword(event.target.value)
-              }}
-              placeholder="e.g. WRKY33"
-            />
-            <button type="submit" className="cta-button cta-button--solid">
-              Search TF
-            </button>
-          </form>
+    <ModulePage module={moduleContent.search} hideInfoSections>
+      {loadError ? (
+        <section className="extra-card fade-rise">
+          <p className="search-table__empty search-table__empty--error">{loadError}</p>
         </section>
+      ) : null}
 
-        <section className="search-card">
-          <h2>Search by Target</h2>
-          <p>Input target gene symbol and jump to Target result table.</p>
-          <form className="search-card__form" onSubmit={handleTargetSearch}>
-            <label htmlFor="target-query" className="sr-only">
-              Target query
-            </label>
-            <input
-              id="target-query"
-              className="query-input"
-              value={targetKeyword}
-              onChange={(event) => {
-                setTargetKeyword(event.target.value)
-              }}
-              placeholder="e.g. NPR1"
-            />
-            <button type="submit" className="cta-button cta-button--solid">
-              Search Target
-            </button>
-          </form>
+      <section className="search-module-grid" aria-label="Search modules">
+        <SearchModulePanel
+          title="Search by TF"
+          description="Select a species and search one TF symbol. Results are split into integrated and sample-derived matches."
+          queryLabel="TF gene"
+          queryPlaceholder="Click Example or enter a TF gene symbol"
+          speciesOptions={speciesOptions}
+          selectedSpeciesId={tfSpeciesId}
+          query={tfQuery}
+          isLoading={isLoadingTf}
+          onSpeciesChange={setTfSpeciesId}
+          onQueryChange={setTfQuery}
+          onExampleClick={() => {
+            flushSync(() => {
+              setTfSpeciesId(defaultTfExample.speciesId)
+              setTfQuery(defaultTfExample.query)
+              setTfError(null)
+            })
+          }}
+          onSubmit={handleSearch(
+            'tf',
+            setIsLoadingTf,
+            setTfError,
+            setTfResult,
+            setTfSearched,
+          )}
+        />
+
+        <SearchModulePanel
+          title="Search by Target"
+          description="Select a species and search one target gene. Results are split into integrated and sample-derived matches."
+          queryLabel="Target gene"
+          queryPlaceholder="Click Example or enter a target gene symbol"
+          speciesOptions={speciesOptions}
+          selectedSpeciesId={targetSpeciesId}
+          query={targetQuery}
+          isLoading={isLoadingTarget}
+          onSpeciesChange={setTargetSpeciesId}
+          onQueryChange={setTargetQuery}
+          onExampleClick={() => {
+            flushSync(() => {
+              setTargetSpeciesId(defaultTargetExample.speciesId)
+              setTargetQuery(defaultTargetExample.query)
+              setTargetError(null)
+            })
+          }}
+          onSubmit={handleSearch(
+            'target',
+            setIsLoadingTarget,
+            setTargetError,
+            setTargetResult,
+            setTargetSearched,
+          )}
+        />
+      </section>
+
+      {shouldShowResults ? (
+        <section className="search-results-grid" aria-label="Search result tables">
+          {activeResult ? (
+            <section className="extra-card fade-rise">
+              <div className="search-results-grid__content">
+                <SearchResultsPanel
+                  result={activeResult.result}
+                  isLoading={activeResult.isLoading}
+                  error={activeResult.error}
+                  searched={activeResult.searched}
+                  modeLabel={activeResult.modeLabel}
+                  showSpeciesColumn
+                />
+              </div>
+            </section>
+          ) : null}
         </section>
-      </section>
-
-      <section ref={tfResultRef} className="extra-card fade-rise" id="tf-results">
-        <h2>TF Search Result Table</h2>
-        {!tfSearched ? (
-          <p className="search-table__empty">No TF search yet. Submit a TF query above.</p>
-        ) : tfRecords.length === 0 ? (
-          <p className="search-table__empty">No TF records matched your keyword.</p>
-        ) : (
-          <div className="search-table-wrap">
-            <table className="search-table">
-              <thead>
-                <tr>
-                  <th>Record ID</th>
-                  <th>TF</th>
-                  <th>Target</th>
-                  <th>Species</th>
-                  <th>Tissue</th>
-                  <th>Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tfRecords.map((record) => (
-                  <tr key={record.id}>
-                    <td>{record.id}</td>
-                    <td>{record.tf}</td>
-                    <td>{record.target}</td>
-                    <td>{record.species}</td>
-                    <td>{record.tissue}</td>
-                    <td>{record.confidence}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section ref={targetResultRef} className="extra-card fade-rise" id="target-results">
-        <h2>Target Search Result Table</h2>
-        {!targetSearched ? (
-          <p className="search-table__empty">No Target search yet. Submit a Target query above.</p>
-        ) : targetRecords.length === 0 ? (
-          <p className="search-table__empty">No Target records matched your keyword.</p>
-        ) : (
-          <div className="search-table-wrap">
-            <table className="search-table">
-              <thead>
-                <tr>
-                  <th>Record ID</th>
-                  <th>Target</th>
-                  <th>TF</th>
-                  <th>Species</th>
-                  <th>Tissue</th>
-                  <th>Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {targetRecords.map((record) => (
-                  <tr key={`${record.id}-target`}>
-                    <td>{record.id}</td>
-                    <td>{record.target}</td>
-                    <td>{record.tf}</td>
-                    <td>{record.species}</td>
-                    <td>{record.tissue}</td>
-                    <td>{record.confidence}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      ) : null}
     </ModulePage>
   )
 }

@@ -121,7 +121,7 @@
     overflow: visible;
   }
 
-  .search-workspace {
+  .search-module-grid {
     grid-template-columns: 1fr;
   }
 
@@ -218,7 +218,7 @@
   .stat-grid,
   .feature-grid,
   .browse-hero-aside__stats,
-  .search-card__form,
+  .search-module-form,
   .release-table__row {
     grid-template-columns: 1fr;
   }

@@ -9,6 +9,7 @@ import {
   getSpeciesNetworkPreview,
   getSpeciesTfTargetCounts,
 } from './lib/browse-data.js'
+import { getSearchExample, searchSpeciesNetwork } from './lib/search-data.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.resolve(__dirname, '..', 'dist')
@@ -128,6 +129,43 @@ export function createApp() {
       }
     },
   )
+
+  app.get('/api/search/species/:speciesId/network', async (request, response, next) => {
+    try {
+      const result = await searchSpeciesNetwork({
+        speciesId: request.params.speciesId,
+        mode: request.query.mode,
+        query: request.query.query,
+      })
+
+      if (!result) {
+        response.status(404).json({ error: 'Species search data not found.' })
+        return
+      }
+
+      response.json(result)
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/api/search/example', async (request, response, next) => {
+    try {
+      const example = await getSearchExample({
+        speciesId: request.query.speciesId,
+        mode: request.query.mode,
+      })
+
+      if (!example) {
+        response.status(404).json({ error: 'No example query could be resolved.' })
+        return
+      }
+
+      response.json(example)
+    } catch (error) {
+      next(error)
+    }
+  })
 
   app.use(express.static(distDir, { index: false }))
 

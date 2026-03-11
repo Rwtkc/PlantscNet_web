@@ -32,13 +32,15 @@ export function ModulePage({
           {heroSupplement ? (
             <div className="hero-card__supplement">{heroSupplement}</div>
           ) : null}
-          <div className="hero-card__actions">
-            {module.actions.map((action) => (
-              <Link key={action.label} to={action.to} className="cta-button">
-                {action.label}
-              </Link>
-            ))}
-          </div>
+          {module.actions.length > 0 ? (
+            <div className="hero-card__actions">
+              {module.actions.map((action) => (
+                <Link key={action.label} to={action.to} className="cta-button">
+                  {action.label}
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
         {heroAside}
       </section>

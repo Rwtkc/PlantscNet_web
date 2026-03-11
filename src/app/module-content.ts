@@ -69,36 +69,33 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
   },
   search: {
     id: 'search',
-    title: 'Search Knowledge Base',
-    subtitle: 'Resolve genes, regulators, and network motifs instantly',
+    title: 'Search Regulatory Relations',
+    subtitle: 'Query TF or target genes within one selected species',
     description:
-      'Query by gene symbol, pathway keyword, or motif family with suggestions tuned for plant single-cell studies.',
+      'Search both the integrated final network and sample-derived pySCENIC TF-target files within the selected species.',
     stats: [
-      { label: 'Indexed Genes', value: '56k+' },
-      { label: 'Motif Entries', value: '9.4k' },
-      { label: 'Average Response', value: '< 120ms' },
+      { label: 'Search Scope', value: 'Both' },
+      { label: 'Modes', value: 'TF / Target' },
+      { label: 'Species Filter', value: 'Required' },
     ],
     highlights: [
       {
-        title: 'Prefix and Fuzzy Match',
+        title: 'Separated Score Semantics',
         description:
-          'Misspellings and alias names are normalized to keep search resilient across public naming variants.',
+          'Integrated-network probability and sample-derived importance score are returned in separate result sections.',
       },
       {
-        title: 'Context-Rich Results',
+        title: 'Species-Scoped Querying',
         description:
-          'Results include cell type enrichment, confidence scores, and source experiment links.',
+          'Every search is constrained to one selected species so the result set stays biologically interpretable.',
       },
       {
-        title: 'Search Traceability',
+        title: 'Sample-Level Backtracking',
         description:
-          'Save common searches for team reuse and audit how candidate genes were selected over time.',
+          'Sample-derived matches reveal which sample and tissue still contain the searched relation.',
       },
     ],
-    actions: [
-      { label: 'Explore Browse', to: '/browse' },
-      { label: 'Get Help', to: '/help' },
-    ],
+    actions: [],
   },
   download: {
     id: 'download',

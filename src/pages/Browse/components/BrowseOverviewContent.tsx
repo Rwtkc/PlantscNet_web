@@ -50,7 +50,16 @@ export function BrowseOverviewContent({
   onSpeciesRelationsPageChange: (page: number) => void
 }) {
   if (!detailView) {
-    return <div className="browse-main__placeholder" role="img" aria-label="D3 stage placeholder" />
+    return (
+      <div className="browse-main__placeholder" role="img" aria-label="PlantscNet browse placeholder">
+        <img
+          className="browse-main__placeholder-logo"
+          src="/PlantscNet_minilogo.webp"
+          alt=""
+          aria-hidden="true"
+        />
+      </div>
+    )
   }
 
   return (
