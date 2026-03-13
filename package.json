@@ -15,9 +15,11 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@amap/amap-jsapi-loader": "^1.0.1",
     "@radix-ui/react-select": "^2.2.6",
     "d3": "^7.9.0",
     "express": "^5.1.0",
+    "nodemailer": "^8.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",

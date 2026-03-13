@@ -312,6 +312,11 @@
   padding: 0.35rem;
 }
 
+.search-picker__menu--top {
+  top: auto;
+  bottom: calc(100% + 0.4rem);
+}
+
 .search-picker__option {
   width: 100%;
   border: 0;
@@ -427,12 +432,12 @@
 }
 
 .search-table--integrated-with-species col:nth-child(1) {
-  width: 12%;
+  width: 20%;
 }
 
 .search-table--integrated-with-species col:nth-child(2),
 .search-table--integrated-with-species col:nth-child(3) {
-  width: 37%;
+  width: 33%;
 }
 
 .search-table--integrated-with-species col:nth-child(4) {
@@ -449,24 +454,29 @@
 }
 
 .search-table--sample-with-species col:nth-child(1) {
-  width: 10%;
+  width: 16%;
 }
 
 .search-table--sample-with-species col:nth-child(2) {
-  width: 14%;
+  width: 17%;
 }
 
 .search-table--sample-with-species col:nth-child(3) {
-  width: 14%;
+  width: 17%;
 }
 
 .search-table--sample-with-species col:nth-child(4),
 .search-table--sample-with-species col:nth-child(5) {
-  width: 25%;
+  width: 19%;
 }
 
 .search-table--sample-with-species col:nth-child(6) {
   width: 12%;
+}
+
+.search-table--sample-with-species th:first-child,
+.search-table--sample-with-species td:first-child {
+  white-space: nowrap;
 }
 
 .search-table--sample col:nth-child(1) {
@@ -504,31 +514,6 @@
   color: #8a3d31;
 }
 
-.release-table {
-  margin-top: 0.75rem;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.release-table__row {
-  display: grid;
-  grid-template-columns: 1fr 1.7fr 1fr;
-  gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
-  border-bottom: 1px solid rgba(19, 74, 42, 0.1);
-  font-size: 0.88rem;
-}
-
-.release-table__row:last-child {
-  border-bottom: 0;
-}
-
-.release-table__row--head {
-  background: rgba(227, 244, 218, 0.9);
-  font-weight: 700;
-}
-
 .contact-form {
   margin-top: 0.8rem;
   display: grid;
@@ -547,6 +532,39 @@
   border-radius: 0.625rem;
   padding: 0.55rem 0.7rem;
   font: inherit;
+}
+
+.contact-form__status {
+  margin: 0.15rem 0 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.8rem;
+  font-size: 0.9rem;
+  border: 1px solid rgba(20, 83, 47, 0.18);
+  background: rgba(232, 247, 227, 0.92);
+  color: var(--accent-deep);
+}
+
+.contact-form__status strong {
+  font-size: 0.92rem;
+}
+
+.contact-form__status--error {
+  border-color: rgba(138, 61, 49, 0.22);
+  background: rgba(250, 237, 233, 0.95);
+  color: #8a3d31;
+}
+
+.contact-form__status--success {
+  border-color: rgba(31, 111, 65, 0.2);
+  background: rgba(232, 247, 227, 0.92);
+  color: var(--accent-deep);
+}
+
+.contact-form .cta-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .faq-list {

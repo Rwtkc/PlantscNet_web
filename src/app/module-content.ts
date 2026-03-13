@@ -99,36 +99,33 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
   },
   download: {
     id: 'download',
-    title: 'Download Releases',
-    subtitle: 'Access versioned exports for local analysis pipelines',
+    title: 'Download Species Assets',
+    subtitle: 'Retrieve motif rankings, final regulatory networks, and TF lists by species',
     description:
-      'Export expression matrices, inferred GRN edges, and metadata bundles with checksum verification.',
+      'Download the server-side feather rankings, MEME motif files, TF lists, and final regulatory networks prepared for each PlantscNet species.',
     stats: [
-      { label: 'Release Streams', value: '12' },
-      { label: 'Storage Footprint', value: '1.7 TB' },
-      { label: 'Integrity Checks', value: '100%' },
+      { label: 'Asset Families', value: '4' },
+      { label: 'Species Bundles', value: '10' },
+      { label: 'Delivery Mode', value: 'Direct' },
     ],
     highlights: [
       {
-        title: 'Versioned Archives',
+        title: 'Species-Scoped Downloads',
         description:
-          'Every file references semantic versions so downstream scripts can pin exact reproducible inputs.',
+          'Each plant species exposes the same four asset families so downstream scripts can stay consistent.',
       },
       {
-        title: 'Bandwidth Efficient',
+        title: 'Server-Backed Files',
         description:
-          'Use differential update packages when only incremental release deltas are required.',
+          'Large bundles stay on the deployment host and are streamed directly without copying them into the frontend repository.',
       },
       {
-        title: 'Pipeline Ready',
+        title: 'Workflow Ready',
         description:
-          'Package manifests are formatted for immediate integration with workflow engines.',
+          'Ranking feather archives, final regulatory networks, MEME motif files, and TF lists map directly to the species analysis workflow.',
       },
     ],
-    actions: [
-      { label: 'Browse Datasets', to: '/browse' },
-      { label: 'Contact Maintainers', to: '/contact' },
-    ],
+    actions: [],
   },
   contact: {
     id: 'contact',
@@ -158,10 +155,7 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
           'Conversation records can be linked to release notes and curation decisions for accountability.',
       },
     ],
-    actions: [
-      { label: 'Open Help Center', to: '/help' },
-      { label: 'Go Home', to: '/home' },
-    ],
+    actions: [],
   },
   help: {
     id: 'help',

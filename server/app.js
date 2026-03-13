@@ -9,6 +9,9 @@ import {
   getSpeciesNetworkPreview,
   getSpeciesTfTargetCounts,
 } from './lib/browse-data.js'
+import { sendContactRequestMail, validateContactRequest } from './lib/contact-mail.js'
+import { fetchContactStaticMap, getContactLocationMeta } from './lib/contact-map.js'
+import { getDownloadAssets, resolveDownloadAsset } from './lib/download-data.js'
 import { getSearchExample, searchSpeciesNetwork } from './lib/search-data.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -18,9 +21,71 @@ export function createApp() {
   const app = express()
 
   app.disable('x-powered-by')
+  app.use(express.json())
 
   app.get('/api/health', async (_request, response) => {
     response.json({ status: 'ok' })
+  })
+
+  app.get('/api/contact/location', async (_request, response) => {
+    response.json(getContactLocationMeta())
+  })
+
+  app.get('/api/contact/location-map', async (_request, response, next) => {
+    try {
+      const image = await fetchContactStaticMap()
+      response.setHeader('Content-Type', image.contentType)
+      response.setHeader('Cache-Control', 'public, max-age=86400')
+      response.send(image.buffer)
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/api/contact/request', async (request, response, next) => {
+    try {
+      const validation = validateContactRequest(request.body)
+
+      if (validation.error || !validation.data) {
+        response.status(400).json({
+          ok: false,
+          message: validation.error ?? 'Invalid contact request payload.',
+        })
+        return
+      }
+
+      await sendContactRequestMail(validation.data)
+      response.status(200).json({
+        ok: true,
+        message: 'Your request has been emailed successfully.',
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/api/download/assets', async (_request, response, next) => {
+    try {
+      const assets = await getDownloadAssets()
+      response.json(assets)
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/api/download/:assetKey/:speciesId', async (request, response, next) => {
+    try {
+      const asset = await resolveDownloadAsset(request.params.speciesId, request.params.assetKey)
+
+      if (!asset) {
+        response.status(404).json({ error: 'Download asset not found.' })
+        return
+      }
+
+      response.download(asset.filePath, asset.downloadName)
+    } catch (error) {
+      next(error)
+    }
   })
 
   app.get('/api/browse/index', async (_request, response, next) => {
@@ -175,7 +240,7 @@ export function createApp() {
 
   app.use((error, _request, response, _next) => {
     const message = error instanceof Error ? error.message : 'Unexpected server error.'
-    response.status(500).json({ error: message })
+    response.status(500).json({ error: message, ok: false, message })
   })
 
   return app

@@ -1,0 +1,113 @@
+.contact-map-card {
+  padding: 1rem;
+}
+
+.contact-map-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.contact-map-card__header h2 {
+  margin: 0;
+}
+
+.contact-map-card__header p {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+
+.contact-map-card__coords {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.contact-map-card__frame {
+  margin-top: 0.9rem;
+  position: relative;
+  width: 100%;
+  min-height: 25rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid rgba(20, 78, 44, 0.14);
+  background:
+    linear-gradient(135deg, rgba(235, 248, 231, 0.9), rgba(245, 251, 240, 0.96));
+  isolation: isolate;
+}
+
+.contact-map-card__canvas {
+  width: 100%;
+  min-height: 25rem;
+  display: block;
+}
+
+.contact-map-card__overlay,
+.contact-map-card__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--text-strong);
+  background: linear-gradient(135deg, rgba(239, 248, 234, 0.88), rgba(249, 252, 245, 0.92));
+}
+
+.contact-map-card__fallback {
+  gap: 0.5rem;
+  align-content: center;
+}
+
+.contact-map-card__fallback-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.contact-map-card__fallback p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.contact-map-infowindow {
+  max-width: 18rem;
+  padding: 0.1rem 0.1rem 0.15rem;
+}
+
+.contact-map-infowindow__eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
+.contact-map-infowindow__title {
+  margin: 0.25rem 0 0;
+  font-size: 0.96rem;
+  color: var(--text-strong);
+}
+
+.contact-map-infowindow__address {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .contact-map-card__header {
+    flex-direction: column;
+  }
+
+  .contact-map-card__coords {
+    white-space: normal;
+  }
+
+  .contact-map-card__frame,
+  .contact-map-card__canvas {
+    min-height: 20rem;
+  }
+}

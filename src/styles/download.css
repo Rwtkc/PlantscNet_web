@@ -1,0 +1,132 @@
+.download-section__header h2 {
+  margin: 0;
+}
+
+.download-section__header p {
+  margin: 0.45rem 0 0;
+  color: var(--text-muted);
+}
+
+.download-state {
+  margin: 1rem 0 0;
+  color: var(--text-muted);
+}
+
+.download-state--error {
+  color: #8a3d31;
+}
+
+.download-species-list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.download-species-card {
+  border: 1px solid rgba(20, 78, 44, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(248, 252, 244, 0.72);
+  overflow: hidden;
+}
+
+.download-species-card__trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.95rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-strong);
+}
+
+.download-species-card__trigger:hover,
+.download-species-card__trigger--expanded {
+  background: rgba(234, 246, 228, 0.78);
+}
+
+.download-species-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.download-species-card__count {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.download-asset-grid {
+  padding: 0.95rem 1rem 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  border-top: 1px solid rgba(20, 78, 44, 0.1);
+}
+
+.download-asset-card {
+  border: 1px solid rgba(20, 78, 44, 0.12);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.download-asset-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.download-asset-card__header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.download-asset-card__status {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  white-space: nowrap;
+}
+
+.download-asset-card__status--muted {
+  color: var(--text-muted);
+}
+
+.download-asset-card p {
+  margin: 0.45rem 0 0;
+  color: var(--text-muted);
+}
+
+.download-asset-card__filename {
+  display: inline-block;
+  margin-top: 0.7rem;
+  padding: 0.32rem 0.5rem;
+  border-radius: 0.55rem;
+  background: rgba(233, 244, 227, 0.9);
+  color: var(--text-strong);
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  word-break: break-word;
+}
+
+.download-asset-card .cta-button {
+  align-self: flex-start;
+}
+
+.download-asset-card__empty {
+  display: inline-flex;
+  align-self: flex-start;
+  min-height: 2.375rem;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
