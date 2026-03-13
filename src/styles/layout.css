@@ -1,6 +1,8 @@
 .app-shell {
   width: 100%;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 1.2rem;
   border: 0;
@@ -17,8 +19,6 @@
   justify-content: space-between;
   gap: 1rem 1.6rem;
   flex-wrap: wrap;
-  position: relative;
-  z-index: 2;
 }
 
 .brand {
@@ -100,14 +100,14 @@
 }
 
 .content-wrap {
+  flex: 1 0 auto;
   margin-top: 1.4rem;
-  position: relative;
-  z-index: 1;
+  min-height: 0;
 }
 
 .footer-note {
   margin-top: 1rem;
-  padding-top: 0.8rem;
+  padding-top: 1rem;
   border-top: 1px solid rgba(21, 75, 41, 0.14);
   display: flex;
   justify-content: center;

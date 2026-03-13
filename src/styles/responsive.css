@@ -125,6 +125,10 @@
     grid-template-columns: 1fr;
   }
 
+  .download-asset-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .browse-main__placeholder {
     min-height: 24rem;
     height: auto;
@@ -219,7 +223,7 @@
   .feature-grid,
   .browse-hero-aside__stats,
   .search-module-form,
-  .release-table__row {
+  .download-asset-grid {
     grid-template-columns: 1fr;
   }
 
@@ -229,10 +233,6 @@
 
   .home-stats-card__title--compact {
     white-space: normal;
-  }
-
-  .release-table__row {
-    gap: 0.25rem;
   }
 
   .home-coverage-card {

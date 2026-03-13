@@ -18,18 +18,9 @@ import type {
 } from '../browse.types'
 import { normalizeNetworkLimit, normalizeNetworkThreshold } from '../browse.utils'
 import { buildSingleSampleLinkWidth, getNetworkPreviewCopy } from './species-network-preview.utils'
+import { memo } from 'react'
 
-export function SpeciesNetworkPreviewPanel({
-  preview,
-  isLoading,
-  threshold,
-  defaultThreshold,
-  limit,
-  tfFilter,
-  onApplyFilters,
-  onResetFilters,
-  onFitView,
-}: {
+export type SpeciesNetworkPreviewPanelProps = {
   preview: SpeciesNetworkPreviewResponse
   isLoading: boolean
   threshold: number
@@ -43,7 +34,19 @@ export function SpeciesNetworkPreviewPanel({
   }) => void
   onResetFilters: () => void
   onFitView: () => void
-}) {
+}
+
+function SpeciesNetworkPreviewPanelComponent({
+  preview,
+  isLoading,
+  threshold,
+  defaultThreshold,
+  limit,
+  tfFilter,
+  onApplyFilters,
+  onResetFilters,
+  onFitView,
+}: SpeciesNetworkPreviewPanelProps) {
   const {
     hasFocusedTfNode,
     isSingleSampleSource,
@@ -672,5 +675,8 @@ export function SpeciesNetworkPreviewPanel({
     </div>
   )
 }
+
+export const SpeciesNetworkPreviewPanel = memo(SpeciesNetworkPreviewPanelComponent)
+export default SpeciesNetworkPreviewPanel
 
 

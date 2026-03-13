@@ -79,3 +79,11 @@ export function writeBrowseSessionState(state: PersistedBrowseState) {
 
   window.sessionStorage.setItem(browseSessionStorageKey, JSON.stringify(state))
 }
+
+export function clearBrowseSessionState() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.sessionStorage.removeItem(browseSessionStorageKey)
+}

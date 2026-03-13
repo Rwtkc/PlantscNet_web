@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ModulePage } from '@/components/ModulePage'
+import { resolveApiHref } from '@/app/base'
 import { moduleContent } from '@/app/module-content'
+import '@/styles/download.css'
 import { fetchDownloadAssets } from './download.api'
 import type { DownloadSpeciesAssets } from './download.types'
 
@@ -98,7 +100,7 @@ export default function DownloadPage() {
                           </div>
 
                           {asset.available && asset.href ? (
-                            <a className="cta-button" href={asset.href}>
+                            <a className="cta-button" href={resolveApiHref(asset.href)}>
                               Download
                             </a>
                           ) : (

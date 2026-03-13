@@ -1,7 +1,8 @@
+import { memo } from 'react'
 import type { BrowseMode, SpeciesGroup, TissueGroup } from '../browse.types'
 import { buildSampleSelectionKey } from '../browse.utils'
 
-export function BrowseExplorerSidebar({
+function BrowseExplorerSidebarComponent({
   isLoading,
   loadError,
   browseMode,
@@ -104,26 +105,29 @@ export function BrowseExplorerSidebar({
 
                     {isExpanded ? (
                       <ul className="browse-sample-list" aria-label={`${group.speciesLabel} sample ids`}>
-                        {group.sampleIds.map((sampleId) => (
-                          <li key={sampleId} className="browse-sample-item">
-                            <button
-                              type="button"
-                              className={
-                                selectedSampleKey === buildSampleSelectionKey(group.speciesLabel, sampleId)
-                                  ? 'browse-sample-button browse-sample-button--active'
-                                  : 'browse-sample-button'
-                              }
-                              aria-pressed={
-                                selectedSampleKey === buildSampleSelectionKey(group.speciesLabel, sampleId)
-                              }
-                              onClick={() => {
-                                onSampleToggle(group.speciesLabel, sampleId)
-                              }}
-                            >
-                              {sampleId}
-                            </button>
-                          </li>
-                        ))}
+                        {group.sampleIds.map((sampleId) => {
+                          const selectionKey = buildSampleSelectionKey(group.speciesLabel, sampleId)
+                          const isSampleSelected = selectedSampleKey === selectionKey
+
+                          return (
+                            <li key={sampleId} className="browse-sample-item">
+                              <button
+                                type="button"
+                                className={
+                                  isSampleSelected
+                                    ? 'browse-sample-button browse-sample-button--active'
+                                    : 'browse-sample-button'
+                                }
+                                aria-pressed={isSampleSelected}
+                                onClick={() => {
+                                  onSampleToggle(group.speciesLabel, sampleId)
+                                }}
+                              >
+                                {sampleId}
+                              </button>
+                            </li>
+                          )
+                        })}
                       </ul>
                     ) : null}
                   </li>
@@ -157,31 +161,35 @@ export function BrowseExplorerSidebar({
 
                     {isExpanded ? (
                       <ul className="browse-sample-list" aria-label={`${group.tissue} sample ids`}>
-                        {group.samples.map((sample) => (
-                          <li
-                            key={`${sample.speciesLabel}-${sample.sampleId}`}
-                            className="browse-sample-item"
-                          >
-                            <button
-                              type="button"
-                              className={
-                                selectedSampleKey ===
-                                buildSampleSelectionKey(sample.speciesLabel, sample.sampleId)
-                                  ? 'browse-sample-button browse-sample-button--active'
-                                  : 'browse-sample-button'
-                              }
-                              aria-pressed={
-                                selectedSampleKey ===
-                                buildSampleSelectionKey(sample.speciesLabel, sample.sampleId)
-                              }
-                              onClick={() => {
-                                onSampleToggle(sample.speciesLabel, sample.sampleId)
-                              }}
+                        {group.samples.map((sample) => {
+                          const selectionKey = buildSampleSelectionKey(
+                            sample.speciesLabel,
+                            sample.sampleId,
+                          )
+                          const isSampleSelected = selectedSampleKey === selectionKey
+
+                          return (
+                            <li
+                              key={`${sample.speciesLabel}-${sample.sampleId}`}
+                              className="browse-sample-item"
                             >
-                              {sample.speciesLabel} | {sample.sampleId}
-                            </button>
-                          </li>
-                        ))}
+                              <button
+                                type="button"
+                                className={
+                                  isSampleSelected
+                                    ? 'browse-sample-button browse-sample-button--active'
+                                    : 'browse-sample-button'
+                                }
+                                aria-pressed={isSampleSelected}
+                                onClick={() => {
+                                  onSampleToggle(sample.speciesLabel, sample.sampleId)
+                                }}
+                              >
+                                {sample.speciesLabel} | {sample.sampleId}
+                              </button>
+                            </li>
+                          )
+                        })}
                       </ul>
                     ) : null}
                   </li>
@@ -194,3 +202,5 @@ export function BrowseExplorerSidebar({
     </aside>
   )
 }
+
+export const BrowseExplorerSidebar = memo(BrowseExplorerSidebarComponent)

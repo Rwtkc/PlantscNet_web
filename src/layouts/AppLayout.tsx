@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { toAssetPath } from '@/app/base'
 import { navigationItems } from '@/app/navigation'
 
 function renderNavIcon(id: (typeof navigationItems)[number]['id']) {
@@ -79,8 +80,12 @@ export function AppLayout() {
         <div className="brand">
           <img
             className="brand__mark"
-            src="/PlantscNet_minilogo.webp"
+            src={toAssetPath('PlantscNet_minilogo.webp')}
             alt="PlantscNet mini logo"
+            width={320}
+            height={260}
+            loading="eager"
+            decoding="async"
           />
           <div>
             <p className="brand__name">PlantscNet</p>

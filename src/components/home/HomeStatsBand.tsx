@@ -1,5 +1,4 @@
 import { useRef, useState, type FocusEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { max, scaleBand, scaleLinear } from 'd3'
 import {
   formatCompactCount,
   formatExactCount,
@@ -32,6 +31,43 @@ type ChartTooltipData = {
 
 function clamp(value: number, min: number, maxValue: number) {
   return Math.min(Math.max(value, min), maxValue)
+}
+
+function getMaxValue(data: ChartDatum[]) {
+  return data.reduce((maxValue, item) => Math.max(maxValue, item.value), 0)
+}
+
+function createLinearScale(domainMax: number, rangeStart: number, rangeEnd: number) {
+  if (domainMax <= 0) {
+    return () => rangeStart
+  }
+
+  const ratio = (rangeEnd - rangeStart) / domainMax
+  return (value: number) => rangeStart + value * ratio
+}
+
+function createBandScale(
+  labels: string[],
+  rangeStart: number,
+  rangeEnd: number,
+  paddingInner: number,
+  paddingOuter = 0,
+) {
+  const totalRange = rangeEnd - rangeStart
+  const stepDenominator = Math.max(1, labels.length - paddingInner + paddingOuter * 2)
+  const step = totalRange / stepDenominator
+  const bandwidth = step * (1 - paddingInner)
+  const startOffset = rangeStart + step * paddingOuter
+  const positions = new Map(
+    labels.map((label, index) => [label, startOffset + index * step] as const),
+  )
+
+  return {
+    bandwidth,
+    get(label: string) {
+      return positions.get(label)
+    },
+  }
 }
 
 function ChartTooltip({ tooltip }: { tooltip: ChartTooltipData | null }) {
@@ -86,13 +122,13 @@ function HorizontalBarChart({
   const valueWidth = 52
   const innerWidth = width - labelWidth - valueWidth
   const chartHeight = data.length * rowHeight
-  const barScale = scaleLinear()
-    .domain([0, max(data, (item) => item.value) ?? 0])
-    .range([0, innerWidth])
-  const yScale = scaleBand<string>()
-    .domain(data.map((item) => item.label))
-    .range([0, chartHeight])
-    .paddingInner(0.36)
+  const barScale = createLinearScale(getMaxValue(data), 0, innerWidth)
+  const yScale = createBandScale(
+    data.map((item) => item.label),
+    0,
+    chartHeight,
+    0.36,
+  )
 
   const showTooltip = (
     item: ChartDatum,
@@ -132,7 +168,7 @@ function HorizontalBarChart({
         aria-label={ariaLabel}
       >
         {data.map((item, index) => {
-          const y = yScale(item.label) ?? index * rowHeight
+          const y = yScale.get(item.label) ?? index * rowHeight
           const barY = y + (rowHeight - barHeight) / 2
           const isActive = activeLabel === item.label
 
@@ -199,14 +235,18 @@ function TissueVerticalLollipopChart({ data }: { data: ChartDatum[] }) {
   const topPadding = 28
   const bottomPadding = 125
   const sidePadding = 18
-  const yScale = scaleLinear()
-    .domain([0, max(data, (item) => item.value) ?? 0])
-    .range([height - bottomPadding, topPadding])
-  const xScale = scaleBand<string>()
-    .domain(data.map((item) => item.label))
-    .range([sidePadding, width - sidePadding])
-    .paddingInner(0.34)
-    .paddingOuter(0.18)
+  const yScale = createLinearScale(
+    getMaxValue(data),
+    height - bottomPadding,
+    topPadding,
+  )
+  const xScale = createBandScale(
+    data.map((item) => item.label),
+    sidePadding,
+    width - sidePadding,
+    0.34,
+    0.18,
+  )
 
   const showTooltip = (
     item: ChartDatum,
@@ -253,8 +293,8 @@ function TissueVerticalLollipopChart({ data }: { data: ChartDatum[] }) {
           y2={height - bottomPadding}
         />
         {data.map((item, index) => {
-          const bandStart = xScale(item.label) ?? 0
-          const bandWidth = xScale.bandwidth()
+          const bandStart = xScale.get(item.label) ?? 0
+          const bandWidth = xScale.bandwidth
           const cx = bandStart + bandWidth / 2
           const cy = yScale(item.value)
           const isActive = activeLabel === item.label

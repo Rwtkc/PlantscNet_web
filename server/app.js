@@ -10,7 +10,6 @@ import {
   getSpeciesTfTargetCounts,
 } from './lib/browse-data.js'
 import { sendContactRequestMail, validateContactRequest } from './lib/contact-mail.js'
-import { fetchContactStaticMap, getContactLocationMeta } from './lib/contact-map.js'
 import { getDownloadAssets, resolveDownloadAsset } from './lib/download-data.js'
 import { getSearchExample, searchSpeciesNetwork } from './lib/search-data.js'
 
@@ -21,25 +20,22 @@ export function createApp() {
   const app = express()
 
   app.disable('x-powered-by')
+  app.use((request, response, next) => {
+    response.setHeader('Access-Control-Allow-Origin', '*')
+    response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+    if (request.method === 'OPTIONS') {
+      response.status(204).end()
+      return
+    }
+
+    next()
+  })
   app.use(express.json())
 
   app.get('/api/health', async (_request, response) => {
     response.json({ status: 'ok' })
-  })
-
-  app.get('/api/contact/location', async (_request, response) => {
-    response.json(getContactLocationMeta())
-  })
-
-  app.get('/api/contact/location-map', async (_request, response, next) => {
-    try {
-      const image = await fetchContactStaticMap()
-      response.setHeader('Content-Type', image.contentType)
-      response.setHeader('Cache-Control', 'public, max-age=86400')
-      response.send(image.buffer)
-    } catch (error) {
-      next(error)
-    }
   })
 
   app.post('/api/contact/request', async (request, response, next) => {

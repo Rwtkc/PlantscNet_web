@@ -106,6 +106,31 @@
   margin-top: auto;
 }
 
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.375rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999rem;
+  border: 1px solid rgba(31, 111, 65, 0.35);
+  text-decoration: none;
+  color: var(--accent-deep);
+  font-weight: 600;
+  background: rgba(238, 252, 232, 0.95);
+  transition: background-color 0.2s ease;
+}
+
+.cta-button:hover {
+  background: rgba(226, 245, 220, 0.96);
+}
+
+.cta-button--solid {
+  background: rgba(238, 252, 232, 0.95);
+  color: var(--accent-deep);
+  border: 1px solid rgba(31, 111, 65, 0.35);
+}
+
 .home-utility-card {
   border: 1px solid rgba(20, 78, 44, 0.14);
   border-radius: var(--radius-lg);

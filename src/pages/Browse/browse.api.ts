@@ -1,3 +1,5 @@
+import { toApiPath } from '@/app/base'
+import { fetchJson } from '@/app/http'
 import type {
   BrowseIndexCacheEntry,
   BrowseIndexResponse,
@@ -30,16 +32,6 @@ export const browsePageCache = {
     string,
     Promise<SpeciesNetworkRelationsResponse>
   >,
-}
-
-async function fetchJson<T>(input: string): Promise<T> {
-  const response = await fetch(input)
-
-  if (!response.ok) {
-    throw new Error(`Request failed for ${input}`)
-  }
-
-  return (await response.json()) as T
 }
 
 async function loadCachedResource<T>(
@@ -96,7 +88,7 @@ export async function loadSpeciesDetails(
   try {
     return {
       tfTargetCounts: await fetchJson<Record<string, number | null>>(
-        `/api/browse/species/${species.id}/tf-target-counts`,
+        toApiPath(`/browse/species/${species.id}/tf-target-counts`),
       ),
       detailError: null,
     }
@@ -116,7 +108,7 @@ export async function loadSampleDetail(
   pageSize: number,
 ): Promise<SampleDetailResponse> {
   return fetchJson<SampleDetailResponse>(
-    `/api/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}?page=${page}&pageSize=${pageSize}`,
+    `${toApiPath(`/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}`)}?page=${page}&pageSize=${pageSize}`,
   )
 }
 
@@ -150,7 +142,7 @@ export async function loadSpeciesNetworkPreview(
   tfFilter: string,
 ): Promise<SpeciesNetworkPreviewResponse> {
   const response = await fetchJson<SpeciesNetworkPreviewResponse>(
-    `/api/browse/species/${speciesId}/network-preview?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    `${toApiPath(`/browse/species/${speciesId}/network-preview`)}?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
   )
 
   if (!Array.isArray(response.nodes) || !Array.isArray(response.links)) {
@@ -168,7 +160,7 @@ export async function loadSampleNetworkPreview(
   tfFilter: string,
 ): Promise<SpeciesNetworkPreviewResponse> {
   const response = await fetchJson<SpeciesNetworkPreviewResponse>(
-    `/api/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}/network-preview?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    `${toApiPath(`/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}/network-preview`)}?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
   )
 
   if (!Array.isArray(response.nodes) || !Array.isArray(response.links)) {
@@ -186,7 +178,7 @@ export async function loadSpeciesNetworkRelations(
   tfFilter: string,
 ): Promise<SpeciesNetworkRelationsResponse> {
   return fetchJson<SpeciesNetworkRelationsResponse>(
-    `/api/browse/species/${speciesId}/network-relations?page=${page}&pageSize=${pageSize}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    `${toApiPath(`/browse/species/${speciesId}/network-relations`)}?page=${page}&pageSize=${pageSize}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
   )
 }
 
@@ -238,7 +230,7 @@ export function prefetchSpeciesNetworkRelations(
 
 export async function loadBrowseIndex(): Promise<BrowseIndexCacheEntry> {
   try {
-    const response = await fetchJson<BrowseIndexResponse>('/api/browse/index')
+    const response = await fetchJson<BrowseIndexResponse>(toApiPath('/browse/index'))
 
     return {
       species: response.species,

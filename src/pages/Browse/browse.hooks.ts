@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   buildSampleDetailCacheKey,
   browsePageCache,
@@ -90,6 +90,10 @@ export function useSpeciesDetailData(
   const speciesDetailRequestRef = useRef<Record<string, Promise<SpeciesDetailCacheEntry>>>(
     browsePageCache.speciesDetailRequestStore,
   )
+  const speciesOptionsById = useMemo(
+    () => new Map(speciesOptions.map((species) => [species.id, species])),
+    [speciesOptions],
+  )
 
   useEffect(() => {
     let isCancelled = false
@@ -123,7 +127,7 @@ export function useSpeciesDetailData(
             return [speciesId, cachedEntry] as const
           }
 
-          const species = speciesOptions.find((option) => option.id === speciesId)
+          const species = speciesOptionsById.get(speciesId)
           if (!species) {
             return [
               speciesId,
@@ -166,7 +170,7 @@ export function useSpeciesDetailData(
     return () => {
       isCancelled = true
     }
-  }, [detailSpeciesIds, speciesOptions])
+  }, [detailSpeciesIds, speciesOptionsById])
 
   return {
     tfTargetCounts,

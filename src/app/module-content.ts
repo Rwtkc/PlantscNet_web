@@ -159,35 +159,12 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
   },
   help: {
     id: 'help',
-    title: 'Help Center',
-    subtitle: 'Operational guidance, FAQs, and troubleshooting playbooks',
+    title: 'Module Guide',
+    subtitle: 'Interpret each PlantscNet module through a biological workflow',
     description:
-      'Find setup instructions, module walkthroughs, and common diagnostics for day-to-day research usage.',
-    stats: [
-      { label: 'Guides', value: '34' },
-      { label: 'FAQ Topics', value: '58' },
-      { label: 'Updated This Month', value: '11' },
-    ],
-    highlights: [
-      {
-        title: 'Onboarding Paths',
-        description:
-          'Role-specific guides for wet lab researchers, bioinformaticians, and platform maintainers.',
-      },
-      {
-        title: 'Troubleshooting Matrix',
-        description:
-          'Map symptoms to corrective actions with command examples and expected outputs.',
-      },
-      {
-        title: 'Doc Versioning',
-        description:
-          'Link help articles to release versions so instructions stay aligned with deployed behavior.',
-      },
-    ],
-    actions: [
-      { label: 'Contact Support', to: '/contact' },
-      { label: 'Explore Search', to: '/search' },
-    ],
+      'Use this page to understand how Browse, Search, and Download support the interpretation of plant single-cell regulatory relationships across species, tissues, and genes.',
+    stats: [],
+    highlights: [],
+    actions: [],
   },
 }

@@ -1,23 +1,15 @@
+import { toApiPath } from '@/app/base'
+import { fetchJson } from '@/app/http'
 import type {
   SearchExampleResponse,
   SearchResponse,
   SearchSpeciesOption,
 } from './search.types'
 
-async function fetchJson<T>(input: string): Promise<T> {
-  const response = await fetch(input)
-
-  if (!response.ok) {
-    throw new Error(`Request failed for ${input}`)
-  }
-
-  return (await response.json()) as T
-}
-
 export async function loadSearchSpeciesOptions() {
   const response = await fetchJson<{
     species: Array<{ id: string; label: string }>
-  }>('/api/browse/index')
+  }>(toApiPath('/browse/index'))
 
   return response.species.map(
     (species): SearchSpeciesOption => ({
@@ -33,7 +25,7 @@ export async function searchSpeciesNetwork(
   query: string,
 ) {
   return fetchJson<SearchResponse>(
-    `/api/search/species/${speciesId}/network?mode=${mode}&query=${encodeURIComponent(query.trim())}`,
+    `${toApiPath(`/search/species/${speciesId}/network`)}?mode=${mode}&query=${encodeURIComponent(query.trim())}`,
   )
 }
 
@@ -44,6 +36,6 @@ export async function loadSearchExample(
   const speciesQuery = speciesId ? `&speciesId=${encodeURIComponent(speciesId)}` : ''
 
   return fetchJson<SearchExampleResponse>(
-    `/api/search/example?mode=${mode}${speciesQuery}`,
+    `${toApiPath('/search/example')}?mode=${mode}${speciesQuery}`,
   )
 }

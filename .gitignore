@@ -15,6 +15,7 @@ dist-ssr
 plantscnetweb.jsonl
 public/data/
 docs/plans/
+.codex-temp/
 
 # Editor directories and files
 .vscode/*

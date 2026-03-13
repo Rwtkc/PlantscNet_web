@@ -1,9 +1,19 @@
 import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
+import { getCurrentHashPath, toHashAppPath } from '@/app/base'
+import { resetSessionStateForReload } from '@/app/session'
 import '@/styles/tokens.css'
 import '@/styles/globals.css'
-import { router } from '@/app/router'
+import { createAppRouter } from '@/app/router'
+
+const homePath = toHashAppPath('/home')
+
+if (resetSessionStateForReload() && getCurrentHashPath() !== '/home') {
+  window.history.replaceState(null, '', homePath)
+}
+
+const router = createAppRouter()
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

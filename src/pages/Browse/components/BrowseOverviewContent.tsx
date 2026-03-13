@@ -1,3 +1,5 @@
+import { memo } from 'react'
+import { toAssetPath } from '@/app/base'
 import type {
   BrowseMode,
   DetailViewContent,
@@ -5,12 +7,12 @@ import type {
   SpeciesNetworkPreviewResponse,
   SpeciesOption,
 } from '../browse.types'
+import { BrowseNetworkPreviewSection } from './BrowseNetworkPreviewSection'
 import { SampleMetadataTable } from './SampleMetadataTable'
-import { SpeciesNetworkPreviewPanel } from './SpeciesNetworkPreviewPanel'
 import { SpeciesNetworkRelationsTable } from './SpeciesNetworkRelationsTable'
 import { TissueCompositionChart } from './TissueCompositionChart'
 
-export function BrowseOverviewContent({
+function BrowseOverviewContentComponent({
   detailView,
   detailError,
   tfTargetCounts,
@@ -54,9 +56,13 @@ export function BrowseOverviewContent({
       <div className="browse-main__placeholder" role="img" aria-label="PlantscNet browse placeholder">
         <img
           className="browse-main__placeholder-logo"
-          src="/PlantscNet_minilogo.webp"
+          src={toAssetPath('PlantscNet_minilogo.webp')}
           alt=""
           aria-hidden="true"
+          width={320}
+          height={260}
+          loading="eager"
+          decoding="async"
         />
       </div>
     )
@@ -102,7 +108,7 @@ export function BrowseOverviewContent({
             </div>
           ) : null}
           {speciesNetworkPreview ? (
-            <SpeciesNetworkPreviewPanel
+            <BrowseNetworkPreviewSection
               preview={speciesNetworkPreview}
               isLoading={isLoadingSpeciesNetworkPreview}
               threshold={networkThreshold}
@@ -111,7 +117,6 @@ export function BrowseOverviewContent({
               tfFilter={networkTfFilter}
               onApplyFilters={onApplyNetworkFilters}
               onResetFilters={onResetNetworkFilters}
-              onFitView={() => {}}
             />
           ) : null}
           {speciesNetworkPreviewError ? (
@@ -129,3 +134,5 @@ export function BrowseOverviewContent({
     </div>
   )
 }
+
+export const BrowseOverviewContent = memo(BrowseOverviewContentComponent)

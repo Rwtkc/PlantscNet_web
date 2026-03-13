@@ -1,3 +1,6 @@
+import { toApiPath } from '@/app/base'
+import { fetchJson } from '@/app/http'
+
 interface ContactRequestPayload {
   name: string
   email: string
@@ -10,26 +13,13 @@ interface ContactRequestResponse {
 }
 
 export async function submitContactRequest(payload: ContactRequestPayload) {
-  const response = await fetch('/api/contact/request', {
+  return fetchJson<ContactRequestResponse>(toApiPath('/contact/request'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
+    errorMessage: 'Failed to send your request.',
+    parseErrorMessage: true,
   })
-
-  const responseText = await response.text()
-  let parsedResponse: ContactRequestResponse | null = null
-
-  try {
-    parsedResponse = JSON.parse(responseText) as ContactRequestResponse
-  } catch {
-    parsedResponse = null
-  }
-
-  if (!response.ok) {
-    throw new Error(parsedResponse?.message ?? 'Failed to send your request.')
-  }
-
-  return parsedResponse
 }

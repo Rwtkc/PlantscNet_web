@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { ModulePage } from '@/components/ModulePage'
 import { moduleContent } from '@/app/module-content'
+import '@/styles/contact.css'
 import { ContactLocationMap } from './ContactLocationMap'
 import { submitContactRequest } from './contact.api'
 

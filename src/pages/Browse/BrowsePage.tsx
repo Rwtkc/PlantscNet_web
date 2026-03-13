@@ -1,4 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import '@/styles/browse.css'
+import { useCallback } from 'react'
 import {
   buildSpeciesNetworkRelationsCacheKey,
   __resetBrowsePageCacheForTests,
@@ -9,20 +11,16 @@ import {
   prefetchSpeciesNetworkRelations,
 } from './browse.api'
 import { defaultNetworkLimit, defaultNetworkThreshold } from './browse.constants'
+import { useBrowseDerivedState } from './browse.derived'
 import { readBrowseSessionState, writeBrowseSessionState } from './browse.storage'
 import type {
   BrowseMode,
-  DetailViewContent,
   SpeciesNetworkRelationsResponse,
   SpeciesNetworkPreviewResponse,
 } from './browse.types'
 import {
   buildAdjacentPages,
   buildSampleSelectionKey,
-  buildSpeciesComposition,
-  buildSpeciesGroups,
-  buildTissueComposition,
-  buildTissueGroups,
 } from './browse.utils'
 import { BrowseExplorerSidebar } from './components/BrowseExplorerSidebar'
 import { BrowseOverviewContent } from './components/BrowseOverviewContent'
@@ -94,27 +92,21 @@ export default function BrowsePage() {
     browsePageCache.speciesNetworkRelationsCacheStore,
   )
 
-  const speciesGroups = useMemo(
-    () => buildSpeciesGroups(speciesOptions, sampleRecords),
-    [sampleRecords, speciesOptions],
-  )
-  const tissueGroups = useMemo(() => buildTissueGroups(sampleRecords), [sampleRecords])
-
-  const activeSpecies =
-    browseMode === 'species'
-      ? speciesOptions.find((species) => species.label === selectedSpeciesLabel) ?? null
-      : null
-  const activeTissue = browseMode === 'tissue' ? expandedTissue : null
-  const activeSample = useMemo(
-    () =>
-      selectedSampleKey
-        ? sampleRecords.find(
-            (record) =>
-              buildSampleSelectionKey(record.speciesLabel, record.sampleId) === selectedSampleKey,
-          ) ?? null
-        : null,
-    [sampleRecords, selectedSampleKey],
-  )
+  const {
+    speciesGroups,
+    tissueGroups,
+    activeSpecies,
+    activeSample,
+    detailView,
+    detailSpeciesIds,
+  } = useBrowseDerivedState({
+    browseMode,
+    selectedSpeciesLabel,
+    expandedTissue,
+    selectedSampleKey,
+    speciesOptions,
+    sampleRecords,
+  })
 
   useEffect(() => {
     if (skipInitialSamplePageResetRef.current) {
@@ -216,68 +208,6 @@ export default function BrowsePage() {
     networkPreviewThreshold,
   ])
 
-  const activeSpeciesRecords = useMemo(
-    () =>
-      activeSpecies
-        ? sampleRecords.filter((record) => record.speciesLabel === activeSpecies.label)
-        : [],
-    [activeSpecies, sampleRecords],
-  )
-
-  const tissueComposition = useMemo(
-    () => buildTissueComposition(activeSpeciesRecords),
-    [activeSpeciesRecords],
-  )
-  const activeTissueRecords = useMemo(
-    () => (activeTissue ? sampleRecords.filter((record) => record.tissue === activeTissue) : []),
-    [activeTissue, sampleRecords],
-  )
-  const tissueSpeciesComposition = useMemo(
-    () => buildSpeciesComposition(activeTissueRecords),
-    [activeTissueRecords],
-  )
-  const detailView = useMemo<DetailViewContent | null>(() => {
-    if (activeSpecies) {
-      return {
-        eyebrow: 'Species overview',
-        title: activeSpecies.label,
-        description:
-          'Browse the tissue composition and sample-level metadata for the selected PlantscNet species.',
-        chartHeading: 'Tissue composition',
-        chartAriaLabel: 'Species tissue composition',
-        chartSummary: `${activeSpeciesRecords.length} total samples`,
-        compositionItems: tissueComposition,
-        tableRecords: activeSpeciesRecords,
-      }
-    }
-
-    if (activeTissue) {
-      return {
-        eyebrow: 'Tissue overview',
-        title: activeTissue,
-        description:
-          'Browse species coverage and sample-level metadata for the selected PlantscNet tissue.',
-        chartHeading: 'Species composition',
-        chartAriaLabel: 'Tissue species composition',
-        chartSummary: `${activeTissueRecords.length} total samples`,
-        compositionItems: tissueSpeciesComposition,
-        tableRecords: activeTissueRecords,
-      }
-    }
-
-    return null
-  }, [
-    activeSpecies,
-    activeSpeciesRecords,
-    activeTissue,
-    activeTissueRecords,
-    tissueComposition,
-    tissueSpeciesComposition,
-  ])
-  const detailSpeciesIds = useMemo(
-    () => Array.from(new Set(detailView?.tableRecords.map((record) => record.speciesId) ?? [])),
-    [detailView],
-  )
   const { tfTargetCounts, detailError } = useSpeciesDetailData(detailSpeciesIds, speciesOptions)
   const { sampleDetail, sampleDetailError, isLoadingSampleDetail } = useSampleDetailData(
     activeSample,
@@ -559,6 +489,48 @@ export default function BrowsePage() {
     }
   }, [activeSample, activeSpecies, browseMode, networkPreviewLimit, networkPreviewThreshold, networkTfFilter])
 
+  const handleApplyNetworkFilters = useCallback(
+    ({ threshold, limit, tfFilter }: { threshold: number; limit: number; tfFilter: string }) => {
+      setNetworkPreviewThreshold(threshold)
+      setNetworkPreviewLimit(limit)
+      setNetworkTfFilter(tfFilter)
+      setHasManualNetworkPreviewThreshold(threshold !== effectiveNetworkDefaultThreshold)
+    },
+    [effectiveNetworkDefaultThreshold],
+  )
+
+  const handleResetNetworkFilters = useCallback(() => {
+    setNetworkPreviewThreshold(effectiveNetworkDefaultThreshold)
+    setNetworkPreviewLimit(defaultNetworkLimit)
+    setNetworkTfFilter('')
+    setHasManualNetworkPreviewThreshold(false)
+  }, [effectiveNetworkDefaultThreshold])
+
+  const handleSpeciesToggle = useCallback(
+    (speciesLabel: string, isExpanded: boolean) => {
+      if (isExpanded && selectedSpeciesLabel === speciesLabel) {
+        setExpandedSpecies(null)
+        setSelectedSpeciesLabel(null)
+        setSelectedSampleKey(null)
+        return
+      }
+
+      setExpandedSpecies(speciesLabel)
+      setSelectedSpeciesLabel(speciesLabel)
+      setSelectedSampleKey(null)
+    },
+    [selectedSpeciesLabel],
+  )
+
+  const handleTissueToggle = useCallback((tissue: string) => {
+    setExpandedTissue((current) => (current === tissue ? null : tissue))
+  }, [])
+
+  const handleSampleToggle = useCallback((speciesLabel: string, sampleId: string) => {
+    const sampleKey = buildSampleSelectionKey(speciesLabel, sampleId)
+    setSelectedSampleKey((current) => (current === sampleKey ? null : sampleKey))
+  }, [])
+
   return (
     <article className="browse-page fade-rise">
       <BrowseExplorerSidebar
@@ -572,25 +544,9 @@ export default function BrowsePage() {
         selectedSpeciesLabel={selectedSpeciesLabel}
         selectedSampleKey={selectedSampleKey}
         onBrowseModeChange={setBrowseMode}
-        onSpeciesToggle={(speciesLabel, isExpanded) => {
-          if (isExpanded && selectedSpeciesLabel === speciesLabel) {
-            setExpandedSpecies(null)
-            setSelectedSpeciesLabel(null)
-            setSelectedSampleKey(null)
-            return
-          }
-
-          setExpandedSpecies(speciesLabel)
-          setSelectedSpeciesLabel(speciesLabel)
-          setSelectedSampleKey(null)
-        }}
-        onTissueToggle={(tissue) => {
-          setExpandedTissue((current) => (current === tissue ? null : tissue))
-        }}
-        onSampleToggle={(speciesLabel, sampleId) => {
-          const sampleKey = buildSampleSelectionKey(speciesLabel, sampleId)
-          setSelectedSampleKey((current) => (current === sampleKey ? null : sampleKey))
-        }}
+        onSpeciesToggle={handleSpeciesToggle}
+        onTissueToggle={handleTissueToggle}
+        onSampleToggle={handleSampleToggle}
       />
 
       <section className="browse-page__main" aria-label="Browse D3 main stage">
@@ -606,20 +562,8 @@ export default function BrowsePage() {
             networkDefaultThreshold={effectiveNetworkDefaultThreshold}
             networkLimit={networkPreviewLimit}
             networkTfFilter={networkTfFilter}
-            onApplyNetworkFilters={({ threshold, limit, tfFilter }) => {
-              setNetworkPreviewThreshold(threshold)
-              setNetworkPreviewLimit(limit)
-              setNetworkTfFilter(tfFilter)
-              setHasManualNetworkPreviewThreshold(
-                threshold !== effectiveNetworkDefaultThreshold,
-              )
-            }}
-            onResetNetworkFilters={() => {
-              setNetworkPreviewThreshold(effectiveNetworkDefaultThreshold)
-              setNetworkPreviewLimit(defaultNetworkLimit)
-              setNetworkTfFilter('')
-              setHasManualNetworkPreviewThreshold(false)
-            }}
+            onApplyNetworkFilters={handleApplyNetworkFilters}
+            onResetNetworkFilters={handleResetNetworkFilters}
             onSampleDetailPageChange={setSampleDetailPage}
           />
         ) : (
@@ -639,20 +583,8 @@ export default function BrowsePage() {
             networkDefaultThreshold={effectiveNetworkDefaultThreshold}
             networkLimit={networkPreviewLimit}
             networkTfFilter={networkTfFilter}
-            onApplyNetworkFilters={({ threshold, limit, tfFilter }) => {
-              setNetworkPreviewThreshold(threshold)
-              setNetworkPreviewLimit(limit)
-              setNetworkTfFilter(tfFilter)
-              setHasManualNetworkPreviewThreshold(
-                threshold !== effectiveNetworkDefaultThreshold,
-              )
-            }}
-            onResetNetworkFilters={() => {
-              setNetworkPreviewThreshold(effectiveNetworkDefaultThreshold)
-              setNetworkPreviewLimit(defaultNetworkLimit)
-              setNetworkTfFilter('')
-              setHasManualNetworkPreviewThreshold(false)
-            }}
+            onApplyNetworkFilters={handleApplyNetworkFilters}
+            onResetNetworkFilters={handleResetNetworkFilters}
             onSpeciesRelationsPageChange={setSpeciesRelationsPage}
           />
         )}

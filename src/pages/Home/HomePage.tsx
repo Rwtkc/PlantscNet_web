@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
+import { toAssetPath } from '@/app/base'
 import HomeStatsBand from '@/components/home/HomeStatsBand'
+import '@/styles/home.css'
 
 export default function HomePage() {
   return (
@@ -40,8 +42,13 @@ export default function HomePage() {
         <div className="home-hero__logo-panel home-hero__logo-panel--bare" aria-label="PlantscNet logo panel">
           <img
             className="home-hero__logo-image"
-            src="/PlantscNet_logo.webp"
+            src={toAssetPath('PlantscNet_logo.webp')}
             alt="PlantscNet logo"
+            width={720}
+            height={531}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
       </section>

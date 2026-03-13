@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import type { SampleDetailResponse, SpeciesNetworkPreviewResponse } from '../browse.types'
+import { BrowseNetworkPreviewSection } from './BrowseNetworkPreviewSection'
 import { SampleOverviewPanel } from './SampleOverviewPanel'
 import { SampleTfTargetTable } from './SampleTfTargetTable'
-import { SpeciesNetworkPreviewPanel } from './SpeciesNetworkPreviewPanel'
 
-export function BrowseSampleContent({
+function BrowseSampleContentComponent({
   sampleDetail,
   sampleDetailError,
   isLoadingSampleDetail,
@@ -55,7 +56,7 @@ export function BrowseSampleContent({
             </div>
           ) : null}
           {sampleNetworkPreview ? (
-            <SpeciesNetworkPreviewPanel
+            <BrowseNetworkPreviewSection
               preview={sampleNetworkPreview}
               isLoading={isLoadingSampleNetworkPreview}
               threshold={networkThreshold}
@@ -64,7 +65,6 @@ export function BrowseSampleContent({
               tfFilter={networkTfFilter}
               onApplyFilters={onApplyNetworkFilters}
               onResetFilters={onResetNetworkFilters}
-              onFitView={() => {}}
             />
           ) : null}
           {sampleNetworkPreviewError ? (
@@ -83,3 +83,5 @@ export function BrowseSampleContent({
     </div>
   )
 }
+
+export const BrowseSampleContent = memo(BrowseSampleContentComponent)

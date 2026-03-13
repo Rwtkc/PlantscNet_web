@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { ModuleContent } from '@/types/module'
+import '@/styles/modules.css'
 
 interface ModulePageProps {
   module: ModuleContent
