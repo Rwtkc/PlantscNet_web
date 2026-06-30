@@ -7,11 +7,13 @@ export function SearchSpeciesPicker({
   value,
   onChange,
   placeholder = 'Select a species',
+  ariaLabel = 'Species options',
 }: {
   options: SearchSpeciesOption[]
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  ariaLabel?: string
 }) {
   const [open, setOpen] = useState(false)
   const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom')
@@ -93,7 +95,7 @@ export function SearchSpeciesPicker({
   }, [open])
 
   return (
-    <div className="search-picker" ref={rootRef}>
+    <div className={open ? 'search-picker search-picker--open' : 'search-picker'} ref={rootRef}>
       <button
         type="button"
         className="query-input search-picker__trigger"
@@ -115,7 +117,7 @@ export function SearchSpeciesPicker({
         <div
           className={`search-picker__menu search-picker__menu--${placement}`}
           role="listbox"
-          aria-label="Species options"
+          aria-label={ariaLabel}
           ref={menuRef}
           style={{ maxHeight: `${menuMaxHeight}px` }}
         >

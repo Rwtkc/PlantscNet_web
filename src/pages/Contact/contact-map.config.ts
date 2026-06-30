@@ -1,12 +1,12 @@
 export const contactLocation = {
-  name: 'College of Life Sciences, Jilin Agricultural University',
-  address: 'Jilin Agricultural University, Changchun, Jilin, China',
-  poiId: 'B01AF12N7M',
+  name: 'Rice Research Institute, Guangdong Academy of Agricultural Sciences',
+  address: 'No. 3 Jinying East 1st Street, Tianhe District, Guangzhou, Guangdong, China',
+  poiId: 'B00140NB7S',
   coordinates: {
-    lat: 43.817,
-    lng: 125.451,
+    lat: 23.1538,
+    lng: 113.3464,
   },
-  zoom: 18,
+  zoom: 18.5,
 }
 
 const hardcodedContactMapConfig = {

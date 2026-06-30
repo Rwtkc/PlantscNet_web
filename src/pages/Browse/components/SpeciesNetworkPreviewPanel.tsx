@@ -49,6 +49,7 @@ function SpeciesNetworkPreviewPanelComponent({
 }: SpeciesNetworkPreviewPanelProps) {
   const {
     hasFocusedTfNode,
+    isSampleAggregateSource,
     isSingleSampleSource,
     metricFilterLabel,
     normalizedTfFilter,
@@ -121,7 +122,7 @@ function SpeciesNetworkPreviewPanelComponent({
       node.type === 'tf' &&
       node.id.toLowerCase() === normalizedTfFilter
     const linkWidth =
-      preview.sourceKind === 'single-sample'
+      preview.sourceKind === 'single-sample' || preview.sourceKind === 'sample-aggregate'
         ? buildSingleSampleLinkWidth(links)
         : (link: SpeciesNetworkPreviewLink) => Math.max(1.2, link.probability * 2.1)
     const chargeStrength = isVeryLargeGraph ? -42 : isLargeGraph ? -60 : -90
@@ -523,16 +524,19 @@ function SpeciesNetworkPreviewPanelComponent({
     ? `Showing ${preview.totalLinks} of ${preview.totalAvailableLinks} edges for TF ${tfFilter} at ${thresholdLabel} >= ${threshold}.`
     : `Showing ${preview.totalLinks} of ${preview.totalAvailableLinks} edges at ${thresholdLabel} >= ${threshold}.`
 
-  const sourceNote = isSingleSampleSource
+  const sourceNote = isSampleAggregateSource
+    ? 'Sample-derived previews count how many scRNA samples contain each TF-target relation.'
+    : isSingleSampleSource
     ? 'Single-sample species use pySCENIC / GRNBoost importance scores rather than calibrated probabilities.'
     : 'Integrated species previews use model-derived edge probabilities.'
+  const usesUnboundedScore = isSingleSampleSource || isSampleAggregateSource
 
   function applyFilters() {
     onApplyFilters({
       threshold: normalizeNetworkThreshold(
         thresholdInput,
         threshold,
-        isSingleSampleSource ? Number.POSITIVE_INFINITY : 1,
+        usesUnboundedScore ? Number.POSITIVE_INFINITY : 1,
       ),
       limit: normalizeNetworkLimit(limitInput, limit),
       tfFilter: tfInput.trim(),
@@ -553,7 +557,7 @@ function SpeciesNetworkPreviewPanelComponent({
           <input
             type="number"
             min={0}
-            max={isSingleSampleSource ? undefined : 1}
+            max={usesUnboundedScore ? undefined : 1}
             step="0.01"
             inputMode="decimal"
             aria-label={thresholdLabel}

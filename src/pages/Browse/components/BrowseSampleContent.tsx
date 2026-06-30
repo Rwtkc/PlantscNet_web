@@ -1,10 +1,11 @@
 import { memo } from 'react'
-import type { SampleDetailResponse, SpeciesNetworkPreviewResponse } from '../browse.types'
+import type { DataModality, SampleDetailResponse, SpeciesNetworkPreviewResponse } from '../browse.types'
 import { BrowseNetworkPreviewSection } from './BrowseNetworkPreviewSection'
 import { SampleOverviewPanel } from './SampleOverviewPanel'
 import { SampleTfTargetTable } from './SampleTfTargetTable'
 
 function BrowseSampleContentComponent({
+  modality,
   sampleDetail,
   sampleDetailError,
   isLoadingSampleDetail,
@@ -19,6 +20,7 @@ function BrowseSampleContentComponent({
   onResetNetworkFilters,
   onSampleDetailPageChange,
 }: {
+  modality: DataModality
   sampleDetail: SampleDetailResponse | null
   sampleDetailError: string | null
   isLoadingSampleDetail: boolean
@@ -45,6 +47,8 @@ function BrowseSampleContentComponent({
         <>
           <SampleOverviewPanel {...sampleDetail} />
           <SampleTfTargetTable
+            modality={modality}
+            sample={sampleDetail.sample}
             rows={sampleDetail.rows}
             pagination={sampleDetail.pagination}
             isLoading={isLoadingSampleDetail}

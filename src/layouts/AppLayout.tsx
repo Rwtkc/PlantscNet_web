@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { toAssetPath } from '@/app/base'
 import { navigationItems } from '@/app/navigation'
 
@@ -43,6 +43,21 @@ function renderNavIcon(id: (typeof navigationItems)[number]['id']) {
           <path d="M15.2 15.2L19 19" />
         </svg>
       )
+    case 'tools':
+      return (
+        <svg {...commonProps}>
+          <path d="M6.5 6.5h4" />
+          <path d="M8.5 4.5v4" />
+          <path d="M13.5 7.5h4" />
+          <path d="M15.5 5.5v4" />
+          <path d="M7 14.5h4.5" />
+          <path d="M11.5 14.5h3.2" />
+          <circle cx="7" cy="14.5" r="1.2" />
+          <circle cx="12" cy="14.5" r="1.2" />
+          <circle cx="15.5" cy="14.5" r="1.2" />
+          <path d="M15.5 14.5l2.5 3" />
+        </svg>
+      )
     case 'download':
       return (
         <svg {...commonProps}>
@@ -72,7 +87,16 @@ function renderNavIcon(id: (typeof navigationItems)[number]['id']) {
 }
 
 export function AppLayout() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = String(new Date().getFullYear())
+  const location = useLocation()
+
+  if (location.pathname === '/article-figure') {
+    return (
+      <main className="article-figure-shell">
+        <Outlet />
+      </main>
+    )
+  }
 
   return (
     <div className="app-shell">
@@ -114,7 +138,7 @@ export function AppLayout() {
         <Outlet />
       </main>
       <footer className="footer-note">
-        <span>{`PlantscNet | Jilin Agricultural University | Changchun, Jilin, China | ${currentYear}`}</span>
+        <span>{`PlantscNet | Jilin Agricultural University & Guangdong Academy of Agricultural Sciences | China | ${currentYear}`}</span>
       </footer>
     </div>
   )

@@ -12,29 +12,31 @@ import type {
   SampleRecord,
   SpeciesDetailCacheEntry,
   SpeciesOption,
+  DataModality,
 } from './browse.types'
 import { buildAdjacentPages } from './browse.utils'
 
-export function useBrowseIndexData() {
+export function useBrowseIndexData(modality: DataModality) {
   const [speciesOptions, setSpeciesOptions] = useState<SpeciesOption[]>(
-    browsePageCache.browseIndexCache?.species ?? [],
+    browsePageCache.browseIndexCacheStore[modality]?.species ?? [],
   )
   const [sampleRecords, setSampleRecords] = useState<SampleRecord[]>(
-    browsePageCache.browseIndexCache?.samples ?? [],
+    browsePageCache.browseIndexCacheStore[modality]?.samples ?? [],
   )
-  const [isLoading, setIsLoading] = useState(browsePageCache.browseIndexCache === null)
+  const [isLoading, setIsLoading] = useState(!browsePageCache.browseIndexCacheStore[modality])
   const [loadError, setLoadError] = useState<string | null>(
-    browsePageCache.browseIndexCache?.loadError ?? null,
+    browsePageCache.browseIndexCacheStore[modality]?.loadError ?? null,
   )
 
   useEffect(() => {
     let isCancelled = false
 
     async function loadAllSamples() {
-      if (browsePageCache.browseIndexCache) {
-        setSpeciesOptions(browsePageCache.browseIndexCache.species)
-        setSampleRecords(browsePageCache.browseIndexCache.samples)
-        setLoadError(browsePageCache.browseIndexCache.loadError)
+      const cachedEntry = browsePageCache.browseIndexCacheStore[modality]
+      if (cachedEntry) {
+        setSpeciesOptions(cachedEntry.species)
+        setSampleRecords(cachedEntry.samples)
+        setLoadError(cachedEntry.loadError)
         setIsLoading(false)
         return
       }
@@ -42,17 +44,17 @@ export function useBrowseIndexData() {
       setIsLoading(true)
       setLoadError(null)
 
-      const request = browsePageCache.browseIndexRequest ?? loadBrowseIndex()
+      const request = browsePageCache.browseIndexRequestStore[modality] ?? loadBrowseIndex(modality)
 
-      if (!browsePageCache.browseIndexRequest) {
-        browsePageCache.browseIndexRequest = request
+      if (!browsePageCache.browseIndexRequestStore[modality]) {
+        browsePageCache.browseIndexRequestStore[modality] = request
       }
 
       const entry = await request
-      browsePageCache.browseIndexCache = entry
+      browsePageCache.browseIndexCacheStore[modality] = entry
 
-      if (browsePageCache.browseIndexRequest === request) {
-        browsePageCache.browseIndexRequest = null
+      if (browsePageCache.browseIndexRequestStore[modality] === request) {
+        delete browsePageCache.browseIndexRequestStore[modality]
       }
 
       if (!isCancelled) {
@@ -68,7 +70,7 @@ export function useBrowseIndexData() {
     return () => {
       isCancelled = true
     }
-  }, [])
+  }, [modality])
 
   return {
     speciesOptions,
@@ -79,6 +81,7 @@ export function useBrowseIndexData() {
 }
 
 export function useSpeciesDetailData(
+  modality: DataModality,
   detailSpeciesIds: string[],
   speciesOptions: SpeciesOption[],
 ) {
@@ -106,7 +109,7 @@ export function useSpeciesDetailData(
       }
 
       const cachedEntries = detailSpeciesIds
-        .map((speciesId) => speciesDetailCacheRef.current[speciesId])
+        .map((speciesId) => speciesDetailCacheRef.current[`${modality}:${speciesId}`])
         .filter((entry): entry is SpeciesDetailCacheEntry => Boolean(entry))
 
       setTfTargetCounts(
@@ -114,7 +117,11 @@ export function useSpeciesDetailData(
       )
       setDetailError(cachedEntries.find((entry) => entry.detailError)?.detailError ?? null)
 
-      if (detailSpeciesIds.every((speciesId) => Boolean(speciesDetailCacheRef.current[speciesId]))) {
+      if (
+        detailSpeciesIds.every((speciesId) =>
+          Boolean(speciesDetailCacheRef.current[`${modality}:${speciesId}`]),
+        )
+      ) {
         return
       }
 
@@ -122,7 +129,8 @@ export function useSpeciesDetailData(
 
       const detailResults = await Promise.all(
         detailSpeciesIds.map(async (speciesId) => {
-          const cachedEntry = speciesDetailCacheRef.current[speciesId]
+          const cacheKey = `${modality}:${speciesId}`
+          const cachedEntry = speciesDetailCacheRef.current[cacheKey]
           if (cachedEntry) {
             return [speciesId, cachedEntry] as const
           }
@@ -139,18 +147,18 @@ export function useSpeciesDetailData(
             ] as const
           }
 
-          const existingRequest = speciesDetailRequestRef.current[speciesId]
-          const detailRequest = existingRequest ?? loadSpeciesDetails(species)
+          const existingRequest = speciesDetailRequestRef.current[cacheKey]
+          const detailRequest = existingRequest ?? loadSpeciesDetails(species, modality)
 
           if (!existingRequest) {
-            speciesDetailRequestRef.current[speciesId] = detailRequest
+            speciesDetailRequestRef.current[cacheKey] = detailRequest
           }
 
           const entry = await detailRequest
 
-          speciesDetailCacheRef.current[speciesId] = entry
-          if (speciesDetailRequestRef.current[speciesId] === detailRequest) {
-            delete speciesDetailRequestRef.current[speciesId]
+          speciesDetailCacheRef.current[cacheKey] = entry
+          if (speciesDetailRequestRef.current[cacheKey] === detailRequest) {
+            delete speciesDetailRequestRef.current[cacheKey]
           }
 
           return [speciesId, entry] as const
@@ -170,7 +178,7 @@ export function useSpeciesDetailData(
     return () => {
       isCancelled = true
     }
-  }, [detailSpeciesIds, speciesOptionsById])
+  }, [detailSpeciesIds, modality, speciesOptionsById])
 
   return {
     tfTargetCounts,
@@ -179,6 +187,7 @@ export function useSpeciesDetailData(
 }
 
 export function useSampleDetailData(
+  modality: DataModality,
   activeSample: SampleRecord | null,
   sampleDetailPage: number,
   sampleDetailPageSize: number,
@@ -202,6 +211,7 @@ export function useSampleDetailData(
       }
 
       const cacheKey = buildSampleDetailCacheKey(
+        modality,
         activeSample.speciesId,
         activeSample.sampleId,
         sampleDetailPage,
@@ -227,6 +237,7 @@ export function useSampleDetailData(
 
       try {
         const entry = await loadCachedSampleDetail(
+          modality,
           activeSample.speciesId,
           activeSample.sampleId,
           sampleDetailPage,
@@ -271,13 +282,14 @@ export function useSampleDetailData(
       sampleDetail.pagination.totalPages,
     ).forEach((page) => {
       prefetchSampleDetail(
+        modality,
         activeSample.speciesId,
         activeSample.sampleId,
         page,
         sampleDetailPageSize,
       )
     })
-  }, [activeSample, sampleDetail, sampleDetailPageSize])
+  }, [activeSample, modality, sampleDetail, sampleDetailPageSize])
 
   return {
     sampleDetail,

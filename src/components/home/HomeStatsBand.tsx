@@ -264,7 +264,7 @@ function TissueVerticalLollipopChart({ data }: { data: ChartDatum[] }) {
     setTooltip({
       label: item.label,
       value: item.value,
-      unit: 'samples',
+      unit: 'entries',
       x: clientX - (frameRect?.left ?? 0),
       y: clientY - (frameRect?.top ?? 0),
       frameWidth,
@@ -381,16 +381,16 @@ export default function HomeStatsBand() {
 
       <section className="home-stats-card">
         <p className="home-stats-card__eyebrow">Tissue Representation</p>
-        <h2 className="home-stats-card__title--compact">All 13 tissues remain visible in the indexed collection.</h2>
+        <h2 className="home-stats-card__title--compact">Common tissue labels represented in the scRNA collection.</h2>
         <TissueVerticalLollipopChart data={tissueRepresentation} />
       </section>
 
       <section className="home-stats-card">
-        <p className="home-stats-card__eyebrow">Integrated Network Size</p>
-        <h2>Final network size across the 10 PlantscNet species.</h2>
+        <p className="home-stats-card__eyebrow">Integrated scRNA Networks</p>
+        <h2>Final regulatory edge counts for the 10 species with integrated outputs.</h2>
         <div className="home-stats-card__chart home-stats-card__chart--network-size">
           <HorizontalBarChart
-            ariaLabel="Integrated final network size bars"
+            ariaLabel="Integrated scRNA final network edge count bars"
             data={integratedNetworkSizes}
             labelWidth={214}
             rounded={false}

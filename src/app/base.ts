@@ -1,8 +1,7 @@
 const rawBaseUrl = import.meta.env.BASE_URL || '/'
-const defaultProductionApiOrigin = 'http://218.29.54.90:1116'
 const rawApiOrigin =
   import.meta.env.VITE_PUBLIC_API_ORIGIN ||
-  (import.meta.env.DEV ? '' : defaultProductionApiOrigin)
+  ''
 
 export const appBaseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`
 export const appBasePath =
@@ -21,28 +20,24 @@ export function toAppPath(path: string) {
   return `${appBasePath}${normalizedPath}`
 }
 
-export function toAssetPath(assetName: string) {
-  const normalizedAssetName = assetName.replace(/^\/+/, '')
-  return `${appBaseUrl}${normalizedAssetName}`
-}
-
-export function toHashAppPath(path: string) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  const basePrefix = appBasePath ? `${appBasePath}/` : '/'
-  return `${basePrefix}#${normalizedPath}`
-}
-
-export function getCurrentHashPath() {
+export function getCurrentAppPath() {
   if (typeof window === 'undefined') {
     return '/'
   }
 
-  const rawHash = window.location.hash.replace(/^#/, '')
-  if (!rawHash) {
-    return '/'
+  const currentPath = window.location.pathname
+
+  if (appBasePath && currentPath.startsWith(appBasePath)) {
+    const pathWithoutBase = currentPath.slice(appBasePath.length)
+    return pathWithoutBase.startsWith('/') ? pathWithoutBase : `/${pathWithoutBase}`
   }
 
-  return rawHash.startsWith('/') ? rawHash : `/${rawHash}`
+  return currentPath || '/'
+}
+
+export function toAssetPath(assetName: string) {
+  const normalizedAssetName = assetName.replace(/^\/+/, '')
+  return `${appBaseUrl}${normalizedAssetName}`
 }
 
 export function toApiPath(path: string) {

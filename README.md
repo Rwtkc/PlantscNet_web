@@ -48,6 +48,12 @@ Start backend locally:
 pnpm dev:server
 ```
 
+Install the Chromium runtime used by article-figure PNG export:
+
+```bash
+pnpm exec playwright install chromium
+```
+
 Useful commands:
 
 ```bash
@@ -67,7 +73,7 @@ The build output is written to `dist/`.
 ## Deployment Notes
 
 - Current frontend production build targets the subpath `/PlantScNet/`.
-- The frontend uses hash routing in production-like deployment, so URLs are of the form `#/home`, `#/browse`, etc.
+- The frontend uses browser history routing in production-like deployment, so URLs are of the form `/PlantScNet/home`, `/PlantScNet/browse`, etc.
 - Current production API access is configured in `src/app/base.ts`.
 - Static deployment uses `public-static/` instead of `public/`, so large archival data files under `public/data/` are not copied into `dist/`.
 - Apache fallback support is generated into `dist/.htaccess` during build.

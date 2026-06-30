@@ -55,6 +55,115 @@ export function formatImportanceScore(value: string) {
   return parsed.toFixed(4)
 }
 
+const sampleIdAccessionPatterns = [
+  /(?:^|[^A-Za-z0-9])(GSE\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(GSM\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(SRR\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(SRX\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(SRP\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(SRS\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(ERR\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(ERX\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(ERP\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(DRR\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(DRX\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(DRP\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(CRR\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(CRX\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(CRA\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(PRJNA\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(PRJCA\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(PRJDB\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(CNP\d+)(?=$|[^A-Za-z0-9])/i,
+  /(?:^|[^A-Za-z0-9])(CSE\d+)(?=$|[^A-Za-z0-9])/i,
+]
+
+function formatSampleTail(rawSampleId: string, accession: string) {
+  const afterAccession = rawSampleId.slice(
+    rawSampleId.toLowerCase().indexOf(accession.toLowerCase()) + accession.length,
+  )
+  const normalizedAccession = accession.toLowerCase()
+  const tokens = afterAccession
+    .split(/[_|\s]+/)
+    .map((token) => token.trim().replace(/^\W+|\W+$/g, ''))
+    .filter(
+      (token) =>
+        token.length > 0 &&
+        token.toLowerCase() !== normalizedAccession &&
+        !/^(orig|ident|orig\.ident|sample|public|atlas|matrix|integrated|revised)$/i.test(token) &&
+        !/^(?:lyrata|athaliana|oleracea|rubella|sativa|bicolor)$/i.test(token),
+    )
+
+  if (tokens.length === 0) {
+    return accession
+  }
+
+  const compactTokens = tokens
+    .map((token) =>
+      token
+        .replace(/^Br4sp-/i, '')
+        .replace(/^sample-/i, '')
+        .replace(/^orig\.ident-/i, ''),
+    )
+    .filter(Boolean)
+  const compactTail = compactTokens.slice(-3).join('_')
+
+  if (compactTail.length > 0 && compactTail.length <= 28) {
+    return `${accession} · ${compactTail}`
+  }
+
+  return `${accession} · ${compactTokens.slice(-2).join('_')}`
+}
+
+function formatNonAccessionSampleId(sampleId: string) {
+  const withoutPrefix = sampleId.replace(/^sample[_-]public[_-]/i, '')
+  const sourceMatch = withoutPrefix.match(/^(figshare\d+|CNGB|GSE\d+|SRP\d+|PRJNA\d+)/i)
+  const source = sourceMatch?.[1] ?? null
+  const normalizedSource = source?.toLowerCase() ?? null
+  const cleaned = withoutPrefix
+    .replace(/^(figshare\d+|CNGB)[_-]*/i, '')
+    .replace(/[_-]orig\.?ident[_-]/gi, '_')
+    .replace(/[_-]Revised[_-]/gi, '_')
+    .replace(/[_-]integrated[_-]/gi, '_')
+    .replace(/[_-]\d+[_-]dpi[_-]/gi, '_')
+    .replace(/[_-]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+  const tokens = cleaned
+    .split('_')
+    .map((token) => token.trim())
+    .filter(
+      (token) =>
+        token.length > 0 &&
+        token.toLowerCase() !== normalizedSource &&
+        !/^(WT|sample|public|control|cells|root|leaf|mixed10x)$/i.test(token),
+    )
+  const tail = tokens.slice(-2).join('_')
+
+  if (source && tail) {
+    return `${source} · ${tail}`
+  }
+
+  if (withoutPrefix !== sampleId) {
+    return withoutPrefix
+  }
+
+  return sampleId
+}
+
+export function formatSampleDisplayId(sampleId: string) {
+  const normalizedSampleId = sampleId.trim()
+
+  for (const pattern of sampleIdAccessionPatterns) {
+    const match = normalizedSampleId.match(pattern)
+
+    if (match?.[1]) {
+      return formatSampleTail(normalizedSampleId, match[1].toUpperCase())
+    }
+  }
+
+  return formatNonAccessionSampleId(normalizedSampleId)
+}
+
 export function formatNetworkMetric(value: number) {
   if (!Number.isFinite(value)) {
     return '-'

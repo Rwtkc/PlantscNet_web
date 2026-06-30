@@ -11,6 +11,14 @@ const canonicalTissueLabels = new Map([
   ['meiotic cells', 'Meiotic Cells'],
   ['nodule', 'Nodule'],
   ['opposite sdx cells', 'Opposite SDX cells'],
+  ['axillary bud', 'Axillary bud'],
+  ['crown root', 'Crown root'],
+  ['hypocotyl', 'Hypocotyl'],
+  ['pod', 'Pod'],
+  ['root tip', 'Root tip'],
+  ['seed', 'Seed'],
+  ['seedling', 'Seedling'],
+  ['spikelet', 'Spikelet'],
   ['shoot apical meristem', 'Shoot Apical Meristem'],
   ['tension sdx cells', 'Tension SDX cells'],
   ['vertical sdx cells', 'Vertical SDX cells'],
@@ -34,6 +42,10 @@ function isGeoAccession(value) {
 
 function isPrimarySampleAccession(value) {
   return /^(?:SRX|SRP|SRS|ERX|ERP|ERS|DRX|DRP|DRS|CRX|CRR)\d+$/i.test(value)
+}
+
+function isPubmedToken(value) {
+  return /^\d+(?:;\d+)*$/.test(value)
 }
 
 function resolveSampleId(fileName, sampleTokens) {
@@ -68,7 +80,24 @@ function resolveSampleId(fileName, sampleTokens) {
 }
 
 export function parseSampleInformationLine(species, line) {
-  const tokens = line.trim().split(/\s+/)
+  const trimmedLine = line.trim()
+
+  if (trimmedLine.includes('\t')) {
+    const columns = trimmedLine.split('\t').map((column) => column.trim())
+
+    if (columns.length >= 4 && columns[0] && columns[1] && columns[2]) {
+      return {
+        speciesId: species.id,
+        speciesLabel: species.label,
+        fileName: columns[0],
+        sampleId: columns[1],
+        tissue: formatTissueLabel(columns.slice(2, -1).join(' ')),
+        pubmedId: columns.at(-1) || '-',
+      }
+    }
+  }
+
+  const tokens = trimmedLine.split(/\s+/)
 
   if (tokens.length < 3) {
     return null
@@ -85,7 +114,7 @@ export function parseSampleInformationLine(species, line) {
   ) {
     pubmedId = remainder.at(-1) ?? '-'
     remainder = remainder.slice(0, -2)
-  } else if (/^\d+$/.test(remainder.at(-1) ?? '')) {
+  } else if (isPubmedToken(remainder.at(-1) ?? '')) {
     pubmedId = remainder.at(-1) ?? '-'
     remainder = remainder.slice(0, -1)
   } else if (remainder.at(-1) === '-') {

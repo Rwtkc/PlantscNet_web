@@ -1,10 +1,11 @@
 import { memo } from 'react'
-import type { BrowseMode, SpeciesGroup, TissueGroup } from '../browse.types'
-import { buildSampleSelectionKey } from '../browse.utils'
+import type { BrowseMode, DataModality, SpeciesGroup, TissueGroup } from '../browse.types'
+import { buildSampleSelectionKey, formatSampleDisplayId } from '../browse.utils'
 
 function BrowseExplorerSidebarComponent({
   isLoading,
   loadError,
+  modality,
   browseMode,
   speciesGroups,
   tissueGroups,
@@ -12,6 +13,7 @@ function BrowseExplorerSidebarComponent({
   expandedTissue,
   selectedSpeciesLabel,
   selectedSampleKey,
+  onModalityChange,
   onBrowseModeChange,
   onSpeciesToggle,
   onTissueToggle,
@@ -19,6 +21,7 @@ function BrowseExplorerSidebarComponent({
 }: {
   isLoading: boolean
   loadError: string | null
+  modality: DataModality
   browseMode: BrowseMode
   speciesGroups: SpeciesGroup[]
   tissueGroups: TissueGroup[]
@@ -26,6 +29,7 @@ function BrowseExplorerSidebarComponent({
   expandedTissue: string | null
   selectedSpeciesLabel: string | null
   selectedSampleKey: string | null
+  onModalityChange: (modality: DataModality) => void
   onBrowseModeChange: (mode: BrowseMode) => void
   onSpeciesToggle: (speciesLabel: string, isExpanded: boolean) => void
   onTissueToggle: (tissue: string) => void
@@ -38,10 +42,48 @@ function BrowseExplorerSidebarComponent({
           <div className="browse-explorer__title">
             <p className="browse-explorer__eyebrow">Browse</p>
             <h1>Sample explorer</h1>
-            <p>Explore species- and tissue-resolved sample collections across the PlantscNet resource.</p>
+            <p>Explore scRNA and scATAC sample collections across the PlantscNet resource.</p>
           </div>
 
-          <div className="browse-mode-switch" role="tablist" aria-label="Browse mode">
+          <div className="browse-modality-control">
+            <p className="browse-modality-control__label">Data type</p>
+            <div className="browse-modality-switch" role="tablist" aria-label="Data modality">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={modality === 'rna'}
+              className={
+                modality === 'rna'
+                  ? 'browse-modality-switch__button browse-modality-switch__button--active'
+                  : 'browse-modality-switch__button'
+              }
+              onClick={() => {
+                onModalityChange('rna')
+              }}
+            >
+              scRNA
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={modality === 'atac'}
+              className={
+                modality === 'atac'
+                  ? 'browse-modality-switch__button browse-modality-switch__button--active'
+                  : 'browse-modality-switch__button'
+              }
+              onClick={() => {
+                onModalityChange('atac')
+              }}
+            >
+              scATAC
+            </button>
+            </div>
+          </div>
+
+          <div className="browse-submode-control">
+            <p className="browse-submode-control__label">Browse by</p>
+            <div className="browse-mode-switch" role="tablist" aria-label="Browse mode">
             <button
               type="button"
               role="tab"
@@ -72,6 +114,7 @@ function BrowseExplorerSidebarComponent({
             >
               By tissue
             </button>
+            </div>
           </div>
         </div>
 
@@ -123,7 +166,7 @@ function BrowseExplorerSidebarComponent({
                                   onSampleToggle(group.speciesLabel, sampleId)
                                 }}
                               >
-                                {sampleId}
+                                <span title={sampleId}>{formatSampleDisplayId(sampleId)}</span>
                               </button>
                             </li>
                           )
@@ -185,7 +228,9 @@ function BrowseExplorerSidebarComponent({
                                   onSampleToggle(sample.speciesLabel, sample.sampleId)
                                 }}
                               >
-                                {sample.speciesLabel} | {sample.sampleId}
+                                <span title={sample.sampleId}>
+                                  {sample.speciesLabel} | {formatSampleDisplayId(sample.sampleId)}
+                                </span>
                               </button>
                             </li>
                           )

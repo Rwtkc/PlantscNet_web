@@ -1,9 +1,10 @@
 import { defaultNetworkLimit, defaultNetworkThreshold } from './browse.constants'
-import type { BrowseMode } from './browse.types'
+import type { BrowseMode, DataModality } from './browse.types'
 
 const browseSessionStorageKey = 'plantscnet:browse-state'
 
 interface PersistedBrowseState {
+  modality: DataModality
   browseMode: BrowseMode
   selectedSpeciesLabel: string | null
   expandedSpecies: string | null
@@ -27,6 +28,10 @@ function parseStoredPage(value: unknown) {
 
 function parseStoredMode(value: unknown): BrowseMode {
   return value === 'tissue' ? 'tissue' : 'species'
+}
+
+function parseStoredModality(value: unknown): DataModality {
+  return value === 'atac' ? 'atac' : 'rna'
 }
 
 function parseStoredThreshold(value: unknown) {
@@ -55,6 +60,7 @@ export function readBrowseSessionState(): PersistedBrowseState | null {
     const parsed = JSON.parse(raw) as Record<string, unknown>
 
     return {
+      modality: parseStoredModality(parsed.modality),
       browseMode: parseStoredMode(parsed.browseMode),
       selectedSpeciesLabel: parseStoredString(parsed.selectedSpeciesLabel),
       expandedSpecies: parseStoredString(parsed.expandedSpecies),

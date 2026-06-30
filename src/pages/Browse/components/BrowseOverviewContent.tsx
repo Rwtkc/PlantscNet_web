@@ -51,6 +51,11 @@ function BrowseOverviewContentComponent({
   onResetNetworkFilters: () => void
   onSpeciesRelationsPageChange: (page: number) => void
 }) {
+  const hasIntegratedSpeciesRelations =
+    speciesNetworkRelations && speciesNetworkRelations.sourceKind !== 'sample-aggregate'
+  const hasIntegratedSpeciesPreview =
+    speciesNetworkPreview && speciesNetworkPreview.sourceKind !== 'sample-aggregate'
+
   if (!detailView) {
     return (
       <div className="browse-main__placeholder" role="img" aria-label="PlantscNet browse placeholder">
@@ -95,7 +100,7 @@ function BrowseOverviewContentComponent({
               <p className="browse-status">Loading integrated regulatory relations...</p>
             </div>
           ) : null}
-          {speciesNetworkRelations ? (
+          {hasIntegratedSpeciesRelations ? (
             <SpeciesNetworkRelationsTable
               relations={speciesNetworkRelations}
               isLoading={isLoadingSpeciesNetworkRelations}
@@ -107,7 +112,7 @@ function BrowseOverviewContentComponent({
               <p className="browse-status browse-status--error">{speciesNetworkRelationsError}</p>
             </div>
           ) : null}
-          {speciesNetworkPreview ? (
+          {hasIntegratedSpeciesPreview ? (
             <BrowseNetworkPreviewSection
               preview={speciesNetworkPreview}
               isLoading={isLoadingSpeciesNetworkPreview}

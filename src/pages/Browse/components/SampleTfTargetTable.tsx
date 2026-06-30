@@ -1,24 +1,140 @@
-﻿import type { SampleDetailResponse, SampleDetailRow } from '../browse.types'
-import { formatImportanceScore } from '../browse.utils'
+import { useState } from 'react'
+import { loadSampleDetail } from '../browse.api'
+import type { DataModality, SampleDetailResponse, SampleDetailRow } from '../browse.types'
+import { formatImportanceScore, formatSampleDisplayId } from '../browse.utils'
 import { SampleDetailPaginationControls } from './PaginationControls'
 
+type ExportFormat = 'csv' | 'txt'
+
+function sanitizeFilePart(value: string) {
+  return value.trim().replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '') || 'tf_target_table'
+}
+
+function escapeCsvCell(value: string) {
+  if (/[",\r\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+
+  return value
+}
+
+function buildDelimitedContent(rows: string[][], delimiter: ',' | '\t') {
+  const cellFormatter = delimiter === ',' ? escapeCsvCell : (value: string) => value
+  return rows.map((row) => row.map(cellFormatter).join(delimiter)).join('\n')
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportSampleTfTargetRows(rows: SampleDetailRow[], format: ExportFormat) {
+  const firstRow = rows[0]
+  const filenameBase = firstRow
+    ? `${sanitizeFilePart(firstRow.species)}_${sanitizeFilePart(firstRow.sampleId)}_tf_target`
+    : 'tf_target'
+  const extension = format === 'csv' ? 'csv' : 'txt'
+  const delimiter = format === 'csv' ? ',' : '\t'
+  const mimeType = format === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8'
+  const contentRows = rows.map((row) => [
+    row.sampleId,
+    row.species,
+    row.tissue,
+    String(row.cells),
+    row.tf,
+    row.target,
+    formatImportanceScore(row.importanceScore),
+  ])
+
+  downloadTextFile(
+    `${filenameBase}.${extension}`,
+    buildDelimitedContent(
+      [
+        ['Sample ID', 'Species', 'Tissue', 'Cells', 'TF', 'Target', 'Importance Score'],
+        ...contentRows,
+      ],
+      delimiter,
+    ),
+    mimeType,
+  )
+}
+
 export function SampleTfTargetTable({
+  modality,
+  sample,
   rows,
   pagination,
   isLoading,
   onPageChange,
 }: {
+  modality: DataModality
+  sample: SampleDetailResponse['sample']
   rows: SampleDetailRow[]
   pagination: SampleDetailResponse['pagination']
   isLoading: boolean
   onPageChange: (page: number) => void
 }) {
+  const [exportFormat, setExportFormat] = useState<ExportFormat | null>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
   const pageStart = (pagination.page - 1) * pagination.pageSize
+  const hasRows = rows.length > 0
+  const isExporting = exportFormat !== null
+
+  async function handleExport(format: ExportFormat) {
+    if (!hasRows || isExporting) {
+      return
+    }
+
+    setExportFormat(format)
+    setExportError(null)
+
+    try {
+      const pageSize = Math.max(pagination.totalRows, pagination.pageSize, 1)
+      const fullDetail = await loadSampleDetail(
+        modality,
+        sample.speciesId,
+        sample.sampleId,
+        1,
+        pageSize,
+      )
+
+      exportSampleTfTargetRows(fullDetail.rows, format)
+    } catch {
+      setExportError('Complete TF-target table could not be exported.')
+    } finally {
+      setExportFormat(null)
+    }
+  }
+
   return (
     <div className="browse-panel">
-      <div className="browse-panel__header">
+      <div className="browse-panel__header browse-table-header">
         <h2>TF-target table</h2>
+        <div className="browse-table-actions" aria-label="TF-target table exports">
+          <button
+            type="button"
+            className="browse-export-button"
+            disabled={!hasRows || isLoading || isExporting}
+            onClick={() => void handleExport('csv')}
+          >
+            {exportFormat === 'csv' ? 'Exporting...' : 'Export CSV'}
+          </button>
+          <button
+            type="button"
+            className="browse-export-button"
+            disabled={!hasRows || isLoading || isExporting}
+            onClick={() => void handleExport('txt')}
+          >
+            {exportFormat === 'txt' ? 'Exporting...' : 'Export TXT'}
+          </button>
+        </div>
       </div>
+      {exportError ? <p className="browse-export-error">{exportError}</p> : null}
 
       <div className="browse-table-wrap browse-table-wrap--loading-shell">
         <table className="browse-metadata-table browse-metadata-table--sample-detail">
@@ -36,7 +152,7 @@ export function SampleTfTargetTable({
           <tbody>
             {rows.map((row, index) => (
               <tr key={`${row.sampleId}-${row.tf}-${row.target}-${index}`}>
-                <td>{row.sampleId}</td>
+                <td title={row.sampleId}>{formatSampleDisplayId(row.sampleId)}</td>
                 <td>{row.species}</td>
                 <td>{row.tissue}</td>
                 <td>{row.cells}</td>
@@ -72,5 +188,3 @@ export function SampleTfTargetTable({
     </div>
   )
 }
-
-

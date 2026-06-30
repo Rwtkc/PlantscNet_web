@@ -1,4 +1,4 @@
-export type ModuleId = 'home' | 'browse' | 'search' | 'download' | 'contact' | 'help'
+export type ModuleId = 'home' | 'browse' | 'search' | 'tools' | 'download' | 'contact' | 'help'
 
 export interface ModuleStat {
   label: string

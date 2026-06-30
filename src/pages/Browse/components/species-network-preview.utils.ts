@@ -37,13 +37,26 @@ export function getNetworkPreviewCopy(
   tfFilter: string,
 ) {
   const isSingleSampleSource = preview.sourceKind === 'single-sample'
+  const isSampleAggregateSource = preview.sourceKind === 'sample-aggregate'
   const normalizedTfFilter = tfFilter.trim().toLowerCase()
-  const previewTitle = isSingleSampleSource
+  const previewTitle = isSampleAggregateSource
+    ? 'Sample-derived network preview'
+    : isSingleSampleSource
     ? 'pySCENIC importance score preview'
     : 'Probability-based network preview'
-  const thresholdLabel = isSingleSampleSource ? 'Importance score' : 'Probability'
-  const metricFilterLabel = isSingleSampleSource ? 'importance score' : 'Probability'
-  const previewAriaLabel = isSingleSampleSource
+  const thresholdLabel = isSampleAggregateSource
+    ? 'Minimum samples'
+    : isSingleSampleSource
+    ? 'Importance score'
+    : 'Probability'
+  const metricFilterLabel = isSampleAggregateSource
+    ? 'sample count'
+    : isSingleSampleSource
+    ? 'importance score'
+    : 'Probability'
+  const previewAriaLabel = isSampleAggregateSource
+    ? 'Sample-derived force-directed network preview'
+    : isSingleSampleSource
     ? 'pySCENIC importance score force-directed network preview'
     : 'Probability-based force-directed network preview'
   const hasFocusedTfNode =
@@ -54,6 +67,7 @@ export function getNetworkPreviewCopy(
     )
 
   return {
+    isSampleAggregateSource,
     isSingleSampleSource,
     normalizedTfFilter,
     previewTitle,

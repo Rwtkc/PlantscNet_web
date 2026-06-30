@@ -40,7 +40,6 @@ export function ContactLocationMap() {
   const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
     mapConfig.isConfigured ? 'idle' : 'error',
   )
-  const [displayCoordinates, setDisplayCoordinates] = useState(contactLocation.coordinates)
 
   useEffect(() => {
     if (!mapConfig.isConfigured || !mapContainerRef.current) {
@@ -110,20 +109,21 @@ export function ContactLocationMap() {
 
           marker.setPosition(resolvedPosition)
           mapInstance.setZoomAndCenter(contactLocation.zoom, resolvedPosition)
-          setDisplayCoordinates({
-            lng: resolvedPosition[0],
-            lat: resolvedPosition[1],
-          })
 
           const detailAddress = [poi.name, poi.address]
             .filter((value): value is string => Boolean(value?.trim()))
             .join(' | ')
 
-          infoWindow.setContent(buildContactMapInfoContent(detailAddress || contactLocation.address))
+          infoWindow.setContent(
+            buildContactMapInfoContent(detailAddress || contactLocation.address),
+          )
         })
 
         mapInstance.on('click', (event) => {
-          const position: [number, number] = [event.lnglat.getLng(), event.lnglat.getLat()]
+          const position: [number, number] = [
+            event.lnglat.getLng(),
+            event.lnglat.getLat(),
+          ]
 
           geocoder.getAddress(position, (status, result) => {
             if (shouldIgnoreUpdates()) {
@@ -176,9 +176,6 @@ export function ContactLocationMap() {
           <h2>Location</h2>
           <p>{contactLocation.name}</p>
         </div>
-        <span className="contact-map-card__coords">
-          {displayCoordinates.lat.toFixed(6)}, {displayCoordinates.lng.toFixed(6)}
-        </span>
       </div>
 
       <div className="contact-map-card__frame">
@@ -191,15 +188,21 @@ export function ContactLocationMap() {
             />
             {mapStatus !== 'ready' ? (
               <div className="contact-map-card__overlay" aria-live="polite">
-                {mapStatus === 'loading' ? 'Loading interactive map...' : 'Preparing map...'}
+                {mapStatus === 'loading'
+                  ? 'Loading interactive map...'
+                  : 'Preparing map...'}
               </div>
             ) : null}
           </>
         ) : (
           <div className="contact-map-card__fallback" role="status">
-            <p className="contact-map-card__fallback-title">Interactive map unavailable</p>
+            <p className="contact-map-card__fallback-title">
+              Interactive map unavailable
+            </p>
             <p>{mapConfig.errorMessage}</p>
-            <p>Add the AMap JS API key and security code to the frontend env, then reload.</p>
+            <p>
+              Add the AMap JS API key and security code to the frontend env, then reload.
+            </p>
           </div>
         )}
       </div>

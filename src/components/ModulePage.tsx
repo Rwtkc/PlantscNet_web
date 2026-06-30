@@ -21,7 +21,7 @@ export function ModulePage({
   children,
 }: ModulePageProps) {
   return (
-    <article className="module-page">
+    <article className={`module-page module-page--${module.id}`}>
       <section
         className={heroAside ? 'hero-card hero-card--with-aside fade-rise' : 'hero-card fade-rise'}
       >

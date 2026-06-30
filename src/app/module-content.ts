@@ -6,60 +6,60 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
     title: 'PlantscNet Portal',
     subtitle: 'A curated gateway for plant single-cell regulatory networks',
     description:
-      'Track datasets, inspect regulatory relationships, and coordinate analysis workflows from one consistent workspace.',
+      'Explore plant single-cell regulatory networks across 30 scRNA species and 4 scATAC species.',
     stats: [
-      { label: 'Species Profiles', value: '10' },
-      { label: 'Tissue Types', value: '13' },
-      { label: 'Weekly Updates', value: '6' },
+      { label: 'Species', value: '30' },
+      { label: 'scRNA Species', value: '30' },
+      { label: 'scATAC Species', value: '4' },
     ],
     highlights: [
       {
-        title: 'Centralized Workspace',
+        title: 'Plant Regulatory Atlas',
         description:
-          'Keep computational outputs, metadata, and protocol notes discoverable for every collaborator.',
+          'Compare inferred TF-target relationships across plant species, tissues, and data layers.',
       },
       {
-        title: 'Reproducible Pipelines',
+        title: 'Gene-Centered Exploration',
         description:
-          'Standardized execution recipes reduce drift between exploratory notebooks and production workflows.',
+          'Start from a transcription factor, target gene, or gene list and follow its regulatory context.',
       },
       {
-        title: 'Quick Module Access',
+        title: 'Ready for Follow-Up Biology',
         description:
-          'Jump directly into browsing, searching, downloading, or support paths without losing context.',
+          'Use downloadable networks and prioritization tools to support marker interpretation and candidate selection.',
       },
     ],
     actions: [
-      { label: 'Browse Collections', to: '/browse' },
-      { label: 'Start Searching', to: '/search' },
+      { label: 'Browse Species', to: '/browse' },
+      { label: 'Search Genes', to: '/search' },
     ],
   },
   browse: {
     id: 'browse',
-    title: 'Browse Repository',
-    subtitle: 'Navigate data collections by species, tissue, and condition',
+    title: 'Browse Species',
+    subtitle: 'View plant species, tissues, and available regulatory networks',
     description:
-      'Use structured filters to inspect available datasets and review what is ready for downstream GRN inference.',
+      'Use Browse to see which plant systems are represented and where regulatory relationships can be inspected.',
     stats: [
-      { label: 'Public Datasets', value: '215' },
-      { label: 'Validated Markers', value: '2.8k' },
-      { label: 'Taxonomy Tags', value: '96' },
+      { label: 'scRNA Species', value: '30' },
+      { label: 'scATAC Species', value: '4' },
+      { label: 'Data Layers', value: '2' },
     ],
     highlights: [
       {
-        title: 'Facet Navigation',
+        title: 'Species Context',
         description:
-          'Combine organism, tissue layer, and treatment facets to narrow broad collections in seconds.',
+          'Move from a plant species to its tissues and regulatory network evidence.',
       },
       {
-        title: 'Snapshot Cards',
+        title: 'Tissue View',
         description:
-          'Every collection card exposes sampling depth, preprocessing status, and last curation timestamp.',
+          'Check the biological material represented before interpreting a TF-target relationship.',
       },
       {
-        title: 'Stable Identifiers',
+        title: 'Network Preview',
         description:
-          'Persistent dataset IDs enable reproducible references in papers and internal analysis reports.',
+          'Inspect high-confidence regulatory links before moving into gene-level search or download.',
       },
     ],
     actions: [
@@ -70,29 +70,59 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
   search: {
     id: 'search',
     title: 'Search Regulatory Relations',
-    subtitle: 'Query TF or target genes within one selected species',
+    subtitle: 'Find TF or target genes within one selected species',
     description:
-      'Search both the integrated final network and sample-derived pySCENIC TF-target files within the selected species.',
+      'Look up inferred TF-target evidence in the integrated network and supporting sample-level networks for the selected species.',
     stats: [
-      { label: 'Search Scope', value: 'Both' },
-      { label: 'Modes', value: 'TF / Target' },
+      { label: 'Data Layers', value: 'scRNA / scATAC' },
+      { label: 'Search Modes', value: 'TF / Target' },
       { label: 'Species Filter', value: 'Required' },
     ],
     highlights: [
       {
-        title: 'Separated Score Semantics',
+        title: 'Integrated Evidence',
         description:
-          'Integrated-network probability and sample-derived importance score are returned in separate result sections.',
+          'Species-level results summarize TF-target relationships retained in the final regulatory network.',
       },
       {
-        title: 'Species-Scoped Querying',
+        title: 'Species-Specific Meaning',
         description:
-          'Every search is constrained to one selected species so the result set stays biologically interpretable.',
+          'Each lookup is interpreted within one plant species, keeping gene names and regulatory context coherent.',
       },
       {
-        title: 'Sample-Level Backtracking',
+        title: 'Biological Source Context',
         description:
-          'Sample-derived matches reveal which sample and tissue still contain the searched relation.',
+          'Sample-level matches help connect a relationship back to the tissue or biological material where it appears.',
+      },
+    ],
+    actions: [],
+  },
+  tools: {
+    id: 'tools',
+    title: 'Gene Prioritization Tools',
+    subtitle: 'Prioritize candidate genes from PlantScNet regulatory networks',
+    description:
+      'Use Neighborhood and Context Hub to interpret seed genes, marker lists, or DEGs in a selected scRNA or scATAC network.',
+    stats: [
+      { label: 'Methods', value: '2' },
+      { label: 'Network Sources', value: 'Sample / Integrated' },
+      { label: 'Input Mode', value: 'Gene List' },
+    ],
+    highlights: [
+      {
+        title: 'Neighborhood',
+        description:
+          'Rank submitted genes and new candidates by their direct regulatory neighborhood.',
+      },
+      {
+        title: 'Context Hub',
+        description:
+          'Find hub genes whose network neighbors are enriched for a submitted context or DEG list.',
+      },
+      {
+        title: 'PlantScNet Networks',
+        description:
+          'Run the tools on an integrated species network or a sample-level TF-target network from the current release.',
       },
     ],
     actions: [],
@@ -102,27 +132,27 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
     title: 'Download Species Assets',
     subtitle: 'Retrieve motif rankings, final regulatory networks, and TF lists by species',
     description:
-      'Download the server-side feather rankings, MEME motif files, TF lists, and final regulatory networks prepared for each PlantscNet species.',
+      'Download species-level regulatory network files, TF lists, motif resources, and ranking tables for downstream biological analysis.',
     stats: [
-      { label: 'Asset Families', value: '4' },
-      { label: 'Species Bundles', value: '10' },
-      { label: 'Delivery Mode', value: 'Direct' },
+      { label: 'Resource Types', value: '4' },
+      { label: 'Species Resources', value: '30' },
+      { label: 'Data Layers', value: 'scRNA / scATAC' },
     ],
     highlights: [
       {
         title: 'Species-Scoped Downloads',
         description:
-          'Each plant species exposes the same four asset families so downstream scripts can stay consistent.',
+          'Each plant species lists the available resources clearly, including final networks and TF annotations.',
       },
       {
-        title: 'Server-Backed Files',
+        title: 'Biology-Ready Tables',
         description:
-          'Large bundles stay on the deployment host and are streamed directly without copying them into the frontend repository.',
+          'Downloaded tables can be used for gene prioritization, comparative analysis, and figure preparation.',
       },
       {
-        title: 'Workflow Ready',
+        title: 'Motif and Ranking Resources',
         description:
-          'Ranking feather archives, final regulatory networks, MEME motif files, and TF lists map directly to the species analysis workflow.',
+          'Motif files and ranking archives support follow-up interpretation of candidate regulators.',
       },
     ],
     actions: [],
@@ -130,29 +160,29 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
   contact: {
     id: 'contact',
     title: 'Contact Team',
-    subtitle: 'Reach maintainers for data issues or collaboration requests',
+    subtitle: 'Reach the PlantscNet team for data questions or collaboration requests',
     description:
-      'Report curation inconsistencies, request metadata clarification, or propose integration partnerships.',
+      'Ask about regulatory annotations, data interpretation, missing files, or potential collaboration.',
     stats: [
-      { label: 'Response SLA', value: '1 Business Day' },
-      { label: 'Maintainers', value: '8' },
-      { label: 'Supported Channels', value: '3' },
+      { label: 'Main Contact', value: 'Email' },
+      { label: 'Institution', value: 'JLAU' },
+      { label: 'Scope', value: 'PlantscNet' },
     ],
     highlights: [
       {
-        title: 'Issue Triage',
+        title: 'Data Questions',
         description:
-          'Incoming requests are automatically classified to route technical and biological questions quickly.',
+          'Contact us if a regulatory relationship, species annotation, or tissue label needs clarification.',
       },
       {
-        title: 'Collaboration Queue',
+        title: 'Biological Interpretation',
         description:
-          'Joint project proposals are tracked with transparent milestones and shared ownership notes.',
+          'We welcome questions about how to interpret PlantScNet results in a biological context.',
       },
       {
-        title: 'Audit-Friendly Logs',
+        title: 'Collaboration',
         description:
-          'Conversation records can be linked to release notes and curation decisions for accountability.',
+          'Researchers interested in plant single-cell regulatory networks can reach out for collaboration.',
       },
     ],
     actions: [],
@@ -160,9 +190,9 @@ export const moduleContent: Record<ModuleId, ModuleContent> = {
   help: {
     id: 'help',
     title: 'Module Guide',
-    subtitle: 'Interpret each PlantscNet module through a biological workflow',
+    subtitle: 'Use each PlantscNet module for biological interpretation',
     description:
-      'Use this page to understand how Browse, Search, and Download support the interpretation of plant single-cell regulatory relationships across species, tissues, and genes.',
+      'Use this page to understand how Browse, Search, Tools, and Download support plant single-cell regulatory interpretation across species, tissues, and genes.',
     stats: [],
     highlights: [],
     actions: [],

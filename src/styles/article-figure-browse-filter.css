@@ -1,0 +1,106 @@
+.article-figure-browse-filter {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 0.8mm;
+  align-content: stretch;
+  padding: 1.55mm;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.article-figure-browse-filter__eyebrow {
+  color: #2f8a45;
+  font-family: Montserrat;
+  font-size: 6.5px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.article-figure-browse-filter > strong {
+  color: #1c3d2c;
+  font-family: Montserrat;
+  font-size: 8.4px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.article-figure-browse-filter__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9mm;
+}
+
+.article-figure-browse-filter__tabs span {
+  padding: 0.82mm 0.8mm;
+  border: 1px solid #b9cab9;
+  border-radius: 5px;
+  color: #405346;
+  background: #fbfdf8;
+  font-family: Montserrat;
+  font-size: 6px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.article-figure-browse-filter__tabs .is-active {
+  border-color: #8fbd93;
+  background: #e8f4e4;
+  color: #193f2a;
+}
+
+.article-figure-browse-filter__list {
+  display: grid;
+  grid-template-rows: repeat(7, minmax(0, 1fr)) auto;
+  gap: 0.9mm;
+  align-content: stretch;
+  height: 100%;
+  margin-top: 0.2mm;
+}
+
+.article-figure-browse-filter__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1mm;
+  align-items: center;
+  min-height: 0;
+  padding: 0.55mm 1.1mm;
+  border: 1px solid #d3ded1;
+  border-radius: 5px;
+  background: #f8fbf5;
+}
+
+.article-figure-browse-filter__item span,
+.article-figure-browse-filter__item b {
+  color: #52695a;
+  font-family: Montserrat;
+  font-size: 5.45px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.article-figure-browse-filter__item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-figure-browse-filter__item.is-selected {
+  border-color: #79ae7c;
+  background: #e9f5e5;
+}
+
+.article-figure-browse-filter__item.is-selected span,
+.article-figure-browse-filter__item.is-selected b {
+  color: #1e6b38;
+}
+
+.article-figure-browse-filter__more {
+  color: #52695a;
+  font-family: Montserrat;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}

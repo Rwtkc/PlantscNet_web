@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SampleRecord } from '../browse.types'
+import { formatSampleDisplayId } from '../browse.utils'
 import { PaginationControls } from './PaginationControls'
 
 export function SampleMetadataTable({
@@ -42,7 +43,7 @@ export function SampleMetadataTable({
             {visibleRecords.map((record) => (
               <tr key={`${record.speciesLabel}-${record.sampleId}`}>
                 <td>{record.speciesLabel}</td>
-                <td>{record.sampleId}</td>
+                <td title={record.sampleId}>{formatSampleDisplayId(record.sampleId)}</td>
                 <td>{record.tissue}</td>
                 <td>scRNA-seq</td>
                 <td>{tfTargetCounts[record.fileName] ?? '-'}</td>
@@ -64,5 +65,3 @@ export function SampleMetadataTable({
     </div>
   )
 }
-
-

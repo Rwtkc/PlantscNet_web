@@ -2,6 +2,12 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { speciesById, speciesCatalog } from '../species.js'
 import {
+  __resetDataContextCacheForTests,
+  getDataRoot,
+  normalizeModality,
+  resolveSpeciesMetaDirectory,
+} from './data-context.js'
+import {
   parseRegulatoryNetworkRows,
   parseSampleInformation,
   parseSampleInformationLine,
@@ -10,9 +16,7 @@ import {
   parseTfTargetRows,
 } from './browse-data-parsers.js'
 
-let resolvedDataRootPromise
-let resolvedSpeciesMetaRootPromise
-let browseIndexPromise
+const browseIndexPromises = new Map()
 const speciesTfTargetCountsCache = new Map()
 const sampleDetailCache = new Map()
 const speciesNetworkRowsCache = new Map()
@@ -22,6 +26,10 @@ const sampleNetworkPreviewCache = new Map()
 const speciesNetworkRelationsCache = new Map()
 const defaultNetworkThreshold = 0.5
 const singleSampleRecommendedThresholdQuantile = 0.75
+
+function createModalityCacheKey(modality, ...parts) {
+  return [normalizeModality(modality), ...parts].join(':')
+}
 
 function normalizePositiveInteger(value, fallback) {
   const numericValue = Number.parseInt(String(value ?? ''), 10)
@@ -95,16 +103,17 @@ function compareNetworkRowProbability(left, right) {
   return rightProbability - leftProbability
 }
 
-async function loadSpeciesNetworkRows(speciesId) {
+async function loadSpeciesNetworkRows(speciesId, modalityValue) {
+  const modality = normalizeModality(modalityValue)
   const species = speciesById.get(speciesId)
 
   if (!species) {
     return null
   }
 
-  const dataRoot = await getDataRoot()
+  const dataRoot = await getDataRoot(modality)
   const networkPath = path.join(dataRoot, speciesId, 'final_regulatory_with_probability.tsv')
-  const { samples } = await getBrowseIndex()
+  const { samples } = await getBrowseIndex(modality)
   const speciesSamples = samples.filter((record) => record.speciesId === speciesId)
 
   try {
@@ -132,14 +141,15 @@ async function loadSpeciesNetworkRows(speciesId) {
   }
 }
 
-async function loadSampleNetworkRows(speciesId, sampleId) {
+async function loadSampleNetworkRows(speciesId, sampleId, modalityValue) {
+  const modality = normalizeModality(modalityValue)
   const species = speciesById.get(speciesId)
 
   if (!species) {
     return null
   }
 
-  const { samples } = await getBrowseIndex()
+  const { samples } = await getBrowseIndex(modality)
   const sampleRecord = samples.find(
     (record) => record.speciesId === speciesId && record.sampleId === sampleId,
   )
@@ -148,7 +158,7 @@ async function loadSampleNetworkRows(speciesId, sampleId) {
     return null
   }
 
-  const dataRoot = await getDataRoot()
+  const dataRoot = await getDataRoot(modality)
   const samplePath = path.join(dataRoot, speciesId, sampleRecord.fileName)
 
   try {
@@ -162,94 +172,9 @@ async function loadSampleNetworkRows(speciesId, sampleId) {
   }
 }
 
-async function pathExists(targetPath) {
-  try {
-    await fs.access(targetPath)
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function resolveDataRoot() {
-  const configuredRoot = process.env.PLANTSCNET_DATA_DIR
-
-  if (configuredRoot) {
-    return configuredRoot
-  }
-
-  const candidates = [path.join(process.cwd(), 'data'), path.join(process.cwd(), 'public', 'data')]
-
-  for (const candidate of candidates) {
-    if (await pathExists(candidate)) {
-      return candidate
-    }
-  }
-
-  return candidates[0]
-}
-
-export async function getDataRoot() {
-  if (!resolvedDataRootPromise) {
-    resolvedDataRootPromise = resolveDataRoot()
-  }
-
-  return resolvedDataRootPromise
-}
-
-async function resolveSpeciesMetaRoot() {
-  const configuredRoot = process.env.PLANTSCNET_SPECIES_META_DIR
-
-  if (configuredRoot) {
-    return configuredRoot
-  }
-
-  const candidates = [
-    path.join(process.cwd(), 'species_meta_data'),
-    path.join(process.cwd(), 'data', 'species_meta_data'),
-    path.join(process.cwd(), 'public', 'data', 'species_meta_data'),
-  ]
-
-  for (const candidate of candidates) {
-    if (await pathExists(candidate)) {
-      return candidate
-    }
-  }
-
-  return candidates[0]
-}
-
-export async function getSpeciesMetaRoot() {
-  if (!resolvedSpeciesMetaRootPromise) {
-    resolvedSpeciesMetaRootPromise = resolveSpeciesMetaRoot()
-  }
-
-  return resolvedSpeciesMetaRootPromise
-}
-
-async function resolveSpeciesMetaDirectory(speciesId) {
-  const metaRoot = await getSpeciesMetaRoot()
-  const candidates = Array.from(
-    new Set([
-      speciesId,
-      speciesId.toLowerCase(),
-      `${speciesId.charAt(0).toUpperCase()}${speciesId.slice(1).toLowerCase()}`,
-    ]),
-  )
-
-  for (const candidate of candidates) {
-    const candidatePath = path.join(metaRoot, candidate)
-
-    if (await pathExists(candidatePath)) {
-      return candidatePath
-    }
-  }
-
-  return path.join(metaRoot, speciesId)
-}
-
-async function readSampleRecordsForSpecies(species) {
-  const dataRoot = await getDataRoot()
+async function readSampleRecordsForSpecies(species, modalityValue) {
+  const modality = normalizeModality(modalityValue)
+  const dataRoot = await getDataRoot(modality)
   const sampleInfoPath = path.join(dataRoot, species.id, 'sample_imformation.txt')
 
   try {
@@ -260,41 +185,46 @@ async function readSampleRecordsForSpecies(species) {
   }
 }
 
-async function loadBrowseIndex() {
+async function loadBrowseIndex(modalityValue) {
+  const modality = normalizeModality(modalityValue)
   const sampleGroups = await Promise.all(
     speciesCatalog.map(async (species) => ({
       species,
-      samples: await readSampleRecordsForSpecies(species),
+      samples: await readSampleRecordsForSpecies(species, modality),
     })),
   )
+  const availableSampleGroups = sampleGroups.filter(({ samples }) => samples.length > 0)
 
   return {
-    species: sampleGroups.map(({ species, samples }) => ({
+    species: availableSampleGroups.map(({ species, samples }) => ({
       id: species.id,
       label: species.label,
       sampleCount: samples.length,
     })),
-    samples: sampleGroups.flatMap(({ samples }) => samples),
+    samples: availableSampleGroups.flatMap(({ samples }) => samples),
   }
 }
 
-export async function getBrowseIndex() {
-  if (!browseIndexPromise) {
-    browseIndexPromise = loadBrowseIndex()
+export async function getBrowseIndex(modalityValue = 'rna') {
+  const modality = normalizeModality(modalityValue)
+
+  if (!browseIndexPromises.has(modality)) {
+    browseIndexPromises.set(modality, loadBrowseIndex(modality))
   }
 
-  return browseIndexPromise
+  return browseIndexPromises.get(modality)
 }
 
-async function loadSpeciesTfTargetCounts(speciesId) {
+async function loadSpeciesTfTargetCounts(speciesId, modalityValue) {
+  const modality = normalizeModality(modalityValue)
   const species = speciesById.get(speciesId)
 
   if (!species) {
     return null
   }
 
-  const dataRoot = await getDataRoot()
-  const { samples } = await getBrowseIndex()
+  const dataRoot = await getDataRoot(modality)
+  const { samples } = await getBrowseIndex(modality)
   const speciesSamples = samples.filter((record) => record.speciesId === speciesId)
 
   const countEntries = await Promise.all(
@@ -313,30 +243,36 @@ async function loadSpeciesTfTargetCounts(speciesId) {
   return Object.fromEntries(countEntries)
 }
 
-export async function getSpeciesTfTargetCounts(speciesId) {
+export async function getSpeciesTfTargetCounts(speciesId, options = {}) {
   if (!speciesById.has(speciesId)) {
     return null
   }
 
-  if (!speciesTfTargetCountsCache.has(speciesId)) {
-    speciesTfTargetCountsCache.set(speciesId, loadSpeciesTfTargetCounts(speciesId))
+  const modality = normalizeModality(options.modality)
+  const cacheKey = createModalityCacheKey(modality, speciesId)
+
+  if (!speciesTfTargetCountsCache.has(cacheKey)) {
+    speciesTfTargetCountsCache.set(cacheKey, loadSpeciesTfTargetCounts(speciesId, modality))
   }
 
-  return speciesTfTargetCountsCache.get(speciesId)
+  return speciesTfTargetCountsCache.get(cacheKey)
 }
 
 async function loadSpeciesNetworkPreview(speciesId, options) {
+  const modality = normalizeModality(options.modality)
   const species = speciesById.get(speciesId)
 
   if (!species) {
     return null
   }
 
-  if (!speciesNetworkRowsCache.has(speciesId)) {
-    speciesNetworkRowsCache.set(speciesId, loadSpeciesNetworkRows(speciesId))
+  const rowCacheKey = createModalityCacheKey(modality, speciesId)
+
+  if (!speciesNetworkRowsCache.has(rowCacheKey)) {
+    speciesNetworkRowsCache.set(rowCacheKey, loadSpeciesNetworkRows(speciesId, modality))
   }
 
-  const source = await speciesNetworkRowsCache.get(speciesId)
+  const source = await speciesNetworkRowsCache.get(rowCacheKey)
 
   if (!source) {
     return null
@@ -350,11 +286,18 @@ export async function getSpeciesNetworkPreview(speciesId, options = {}) {
     return null
   }
 
+  const modality = normalizeModality(options.modality)
   const limit = normalizePositiveInteger(options.limit, 500)
   const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
   const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
   const tfFilter = String(options.tf ?? '').trim().toLowerCase()
-  const cacheKey = `${speciesId}:${limit}:${normalizedThreshold}:${tfFilter}`
+  const cacheKey = createModalityCacheKey(
+    modality,
+    speciesId,
+    limit,
+    normalizedThreshold,
+    tfFilter,
+  )
 
   if (!speciesNetworkPreviewCache.has(cacheKey)) {
     speciesNetworkPreviewCache.set(
@@ -363,6 +306,7 @@ export async function getSpeciesNetworkPreview(speciesId, options = {}) {
         limit,
         threshold: normalizedThreshold,
         tf: tfFilter,
+        modality,
       }),
     )
   }
@@ -476,15 +420,23 @@ export async function getSampleNetworkPreview(speciesId, sampleId, options = {})
     return null
   }
 
+  const modality = normalizeModality(options.modality)
   const limit = normalizePositiveInteger(options.limit, 500)
   const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
   const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
   const tfFilter = String(options.tf ?? '').trim().toLowerCase()
-  const rowCacheKey = `${speciesId}:${sampleId}`
-  const previewCacheKey = `${rowCacheKey}:${limit}:${normalizedThreshold}:${tfFilter}`
+  const rowCacheKey = createModalityCacheKey(modality, speciesId, sampleId)
+  const previewCacheKey = createModalityCacheKey(
+    modality,
+    speciesId,
+    sampleId,
+    limit,
+    normalizedThreshold,
+    tfFilter,
+  )
 
   if (!sampleNetworkRowsCache.has(rowCacheKey)) {
-    sampleNetworkRowsCache.set(rowCacheKey, loadSampleNetworkRows(speciesId, sampleId))
+    sampleNetworkRowsCache.set(rowCacheKey, loadSampleNetworkRows(speciesId, sampleId, modality))
   }
 
   if (!sampleNetworkPreviewCache.has(previewCacheKey)) {
@@ -516,15 +468,24 @@ export async function getSpeciesNetworkRelations(speciesId, options = {}) {
     return null
   }
 
+  const modality = normalizeModality(options.modality)
   const pageSize = normalizePositiveInteger(options.pageSize, 12)
   const page = normalizePositiveInteger(options.page, 1)
   const threshold = Number.parseFloat(String(options.threshold ?? String(defaultNetworkThreshold)))
   const normalizedThreshold = Number.isFinite(threshold) ? threshold : defaultNetworkThreshold
   const tfFilter = String(options.tf ?? '').trim().toLowerCase()
-  const cacheKey = `${speciesId}:${page}:${pageSize}:${normalizedThreshold}:${tfFilter}`
+  const rowCacheKey = createModalityCacheKey(modality, speciesId)
+  const cacheKey = createModalityCacheKey(
+    modality,
+    speciesId,
+    page,
+    pageSize,
+    normalizedThreshold,
+    tfFilter,
+  )
 
-  if (!speciesNetworkRowsCache.has(speciesId)) {
-    speciesNetworkRowsCache.set(speciesId, loadSpeciesNetworkRows(speciesId))
+  if (!speciesNetworkRowsCache.has(rowCacheKey)) {
+    speciesNetworkRowsCache.set(rowCacheKey, loadSpeciesNetworkRows(speciesId, modality))
   }
 
   if (!speciesNetworkRelationsCache.has(cacheKey)) {
@@ -532,7 +493,7 @@ export async function getSpeciesNetworkRelations(speciesId, options = {}) {
       cacheKey,
       (async () => {
         const species = speciesById.get(speciesId)
-        const source = await speciesNetworkRowsCache.get(speciesId)
+        const source = await speciesNetworkRowsCache.get(rowCacheKey)
 
         if (!species || !source) {
           return null
@@ -574,14 +535,15 @@ export async function getSpeciesNetworkRelations(speciesId, options = {}) {
   return speciesNetworkRelationsCache.get(cacheKey)
 }
 
-async function loadSampleDetail(speciesId, sampleId) {
+async function loadSampleDetail(speciesId, sampleId, modalityValue) {
+  const modality = normalizeModality(modalityValue)
   const species = speciesById.get(speciesId)
 
   if (!species) {
     return null
   }
 
-  const { samples } = await getBrowseIndex()
+  const { samples } = await getBrowseIndex(modality)
   const sampleRecord = samples.find(
     (record) => record.speciesId === speciesId && record.sampleId === sampleId,
   )
@@ -590,7 +552,7 @@ async function loadSampleDetail(speciesId, sampleId) {
     return null
   }
 
-  const speciesMetaDirectory = await resolveSpeciesMetaDirectory(speciesId)
+  const speciesMetaDirectory = await resolveSpeciesMetaDirectory(modality, speciesId)
   const metaPath = path.join(speciesMetaDirectory, sampleId, 'meta_data.json')
   let metadata
 
@@ -601,7 +563,7 @@ async function loadSampleDetail(speciesId, sampleId) {
     throw new Error(`Sample metadata could not be loaded for ${sampleId}.`)
   }
 
-  const dataRoot = await getDataRoot()
+  const dataRoot = await getDataRoot(modality)
   const tfTargetPath = path.join(dataRoot, speciesId, sampleRecord.fileName)
   let tfTargetRows
 
@@ -638,10 +600,11 @@ export async function getSampleDetail(speciesId, sampleId, options = {}) {
     return null
   }
 
-  const cacheKey = `${speciesId}:${sampleId}`
+  const modality = normalizeModality(options.modality)
+  const cacheKey = createModalityCacheKey(modality, speciesId, sampleId)
 
   if (!sampleDetailCache.has(cacheKey)) {
-    sampleDetailCache.set(cacheKey, loadSampleDetail(speciesId, sampleId))
+    sampleDetailCache.set(cacheKey, loadSampleDetail(speciesId, sampleId, modality))
   }
 
   const detail = await sampleDetailCache.get(cacheKey)
@@ -671,9 +634,8 @@ export async function getSampleDetail(speciesId, sampleId, options = {}) {
 }
 
 export function __resetBrowseDataCacheForTests() {
-  resolvedDataRootPromise = undefined
-  resolvedSpeciesMetaRootPromise = undefined
-  browseIndexPromise = undefined
+  __resetDataContextCacheForTests()
+  browseIndexPromises.clear()
   speciesTfTargetCountsCache.clear()
   sampleDetailCache.clear()
   speciesNetworkRowsCache.clear()

@@ -1,0 +1,205 @@
+.search-results-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.search-result-block {
+  border: 1px solid rgba(20, 78, 44, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(248, 252, 244, 0.78);
+  padding: 0.9rem;
+}
+
+.search-result-block__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.search-result-block__actions {
+  display: grid;
+  grid-template-columns: minmax(18rem, 24rem) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: end;
+}
+
+.search-result-block__count {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.search-export-button {
+  min-height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(31, 111, 65, 0.24);
+  border-radius: 0.6rem;
+  background: rgba(233, 247, 227, 0.96);
+  color: var(--accent-deep);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.18rem 0.68rem;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.search-export-button:hover {
+  background: rgba(224, 242, 216, 0.98);
+  border-color: rgba(31, 111, 65, 0.34);
+}
+
+.search-export-button:active {
+  transform: translateY(1px);
+}
+
+.search-table-wrap {
+  margin-top: 0.75rem;
+  overflow: auto;
+  border: 1px solid rgba(20, 78, 44, 0.14);
+  border-radius: var(--radius-md);
+}
+
+.search-table-filter {
+  margin-top: 0;
+  width: 100%;
+  min-height: 2.2rem;
+  max-width: 24rem;
+  min-width: min(19rem, 100%);
+  padding-block: 0;
+}
+
+@media (max-width: 72rem) {
+  .search-result-block__header {
+    grid-template-columns: 1fr;
+  }
+
+  .search-result-block__actions {
+    justify-content: start;
+  }
+}
+
+@media (max-width: 40rem) {
+  .search-result-block__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.search-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 47.5rem;
+  table-layout: fixed;
+}
+
+.search-table th,
+.search-table td {
+  padding: 0.62rem 0.72rem;
+  border-bottom: 1px solid rgba(20, 78, 44, 0.12);
+  font-size: 0.88rem;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.search-table th:first-child,
+.search-table td:first-child,
+.search-table th:last-child,
+.search-table td:last-child {
+  padding-inline: 0.38rem;
+}
+
+.search-table__metric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  white-space: nowrap;
+}
+
+.search-table--integrated-with-species col:nth-child(1) {
+  width: 20%;
+}
+
+.search-table--integrated-with-species col:nth-child(2),
+.search-table--integrated-with-species col:nth-child(3) {
+  width: 33%;
+}
+
+.search-table--integrated-with-species col:nth-child(4) {
+  width: 14%;
+}
+
+.search-table--integrated col:nth-child(1),
+.search-table--integrated col:nth-child(2) {
+  width: 43%;
+}
+
+.search-table--integrated col:nth-child(3) {
+  width: 14%;
+}
+
+.search-table--sample-with-species col:nth-child(1) {
+  width: 16%;
+}
+
+.search-table--sample-with-species col:nth-child(2) {
+  width: 17%;
+}
+
+.search-table--sample-with-species col:nth-child(3) {
+  width: 17%;
+}
+
+.search-table--sample-with-species col:nth-child(4),
+.search-table--sample-with-species col:nth-child(5) {
+  width: 19%;
+}
+
+.search-table--sample-with-species col:nth-child(6) {
+  width: 12%;
+}
+
+.search-table--sample-with-species th:first-child,
+.search-table--sample-with-species td:first-child {
+  white-space: nowrap;
+}
+
+.search-table--sample col:nth-child(1) {
+  width: 18%;
+}
+
+.search-table--sample col:nth-child(2) {
+  width: 16%;
+}
+
+.search-table--sample col:nth-child(3),
+.search-table--sample col:nth-child(4) {
+  width: 25%;
+}
+
+.search-table--sample col:nth-child(5) {
+  width: 16%;
+}
+
+.search-table th {
+  background: rgba(227, 244, 218, 0.9);
+  font-weight: 700;
+}
+
+.search-table tbody tr:hover {
+  background: rgba(236, 248, 227, 0.7);
+}
+
+.search-table__empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.search-table__empty--error {
+  color: #8a3d31;
+}

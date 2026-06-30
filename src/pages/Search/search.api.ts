@@ -1,15 +1,20 @@
 import { toApiPath } from '@/app/base'
 import { fetchJson } from '@/app/http'
+import type { DataModality } from '@/pages/Browse/browse.types'
 import type {
-  SearchExampleResponse,
   SearchResponse,
   SearchSpeciesOption,
 } from './search.types'
 
-export async function loadSearchSpeciesOptions() {
+function appendModalityQuery(path: string, modality: DataModality, query = '') {
+  const separator = query ? '&' : '?'
+  return `${toApiPath(path)}${query}${separator}modality=${modality}`
+}
+
+export async function loadSearchSpeciesOptions(modality: DataModality) {
   const response = await fetchJson<{
     species: Array<{ id: string; label: string }>
-  }>(toApiPath('/browse/index'))
+  }>(appendModalityQuery('/browse/index', modality))
 
   return response.species.map(
     (species): SearchSpeciesOption => ({
@@ -20,22 +25,16 @@ export async function loadSearchSpeciesOptions() {
 }
 
 export async function searchSpeciesNetwork(
+  modality: DataModality,
   speciesId: string,
   mode: 'tf' | 'target',
   query: string,
 ) {
   return fetchJson<SearchResponse>(
-    `${toApiPath(`/search/species/${speciesId}/network`)}?mode=${mode}&query=${encodeURIComponent(query.trim())}`,
-  )
-}
-
-export async function loadSearchExample(
-  mode: 'tf' | 'target',
-  speciesId?: string,
-) {
-  const speciesQuery = speciesId ? `&speciesId=${encodeURIComponent(speciesId)}` : ''
-
-  return fetchJson<SearchExampleResponse>(
-    `${toApiPath('/search/example')}?mode=${mode}${speciesQuery}`,
+    appendModalityQuery(
+      `/search/species/${speciesId}/network`,
+      modality,
+      `?mode=${mode}&query=${encodeURIComponent(query.trim())}`,
+    ),
   )
 }

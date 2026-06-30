@@ -1,5 +1,5 @@
-﻿import type { SampleDetailResponse } from '../browse.types'
-import { formatMetadataLabel } from '../browse.utils'
+import type { SampleDetailResponse } from '../browse.types'
+import { formatMetadataLabel, formatSampleDisplayId } from '../browse.utils'
 
 export function SampleOverviewPanel({ sample, metadata }: SampleDetailResponse) {
   const metadataEntries = Object.entries(metadata)
@@ -7,7 +7,7 @@ export function SampleOverviewPanel({ sample, metadata }: SampleDetailResponse) 
   return (
     <div className="browse-panel browse-panel--hero">
       <p className="browse-panel__eyebrow">Sample overview</p>
-      <h2>{sample.sampleId}</h2>
+      <h2 title={sample.sampleId}>{formatSampleDisplayId(sample.sampleId)}</h2>
       <p className="browse-sample-overview__description">
         Browse sample-level metadata and TF-target relationships for the selected PlantscNet sample.
       </p>
@@ -23,5 +23,3 @@ export function SampleOverviewPanel({ sample, metadata }: SampleDetailResponse) 
     </div>
   )
 }
-
-

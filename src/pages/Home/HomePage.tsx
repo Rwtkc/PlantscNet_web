@@ -19,12 +19,12 @@ export default function HomePage() {
           </h1>
           <p className="home-hero__subtitle">
             PlantscNet brings together species-level regulatory network resources for
-            browsing, TF-target searching, data download, and project contact.
+            browsing, TF-target search, gene prioritization, and data download.
           </p>
           <p className="home-hero__description">
-            Use the portal to move quickly from species and tissue coverage to ranked
-            regulatory edges, downloadable result tables, and maintainer contact
-            without reading the full project workflow first.
+            Use the portal to move from plant species and tissue context to inferred
+            regulatory relationships, candidate genes, and downloadable resources for
+            follow-up biological interpretation.
           </p>
           <div className="home-hero__actions home-hero__actions--bottom">
             <Link to="/browse" className="cta-button cta-button--solid">
@@ -58,26 +58,35 @@ export default function HomePage() {
       <section className="home-utility-grid fade-rise" aria-label="Portal summary">
         <section className="home-utility-card">
           <p className="home-utility-card__eyebrow">What PlantscNet Provides</p>
-          <h2>A structured portal for species-level network exploration.</h2>
+          <h2>A plant single-cell regulatory network database.</h2>
           <p>
-            Browse species and tissue coverage, search TF-target relationships, and
-            download ranked network outputs from the same portal.
+            Browse species and tissues, search TF-target relationships, prioritize
+            candidate genes, and download regulatory network resources from one portal.
           </p>
         </section>
 
         <section className="home-utility-card">
           <p className="home-utility-card__eyebrow">Data Scope</p>
-          <h2>Built around plant single-cell regulatory network exploration.</h2>
+          <h2>Covering scRNA and scATAC regulatory evidence.</h2>
           <p>
-            The current portal surfaces 10 species and 13 tissue categories so users can
-            move directly into browsing and retrieval without extra filtering setup.
+            The current portal includes regulatory network resources for 30 scRNA
+            species and 4 scATAC species, supporting cross-species comparison and
+            gene-level biological interpretation.
           </p>
         </section>
 
         <section className="home-utility-card home-utility-card--contact">
           <p className="home-utility-card__eyebrow">Affiliation</p>
-          <h2>Jilin Agricultural University</h2>
-          <p>Changchun, Jilin, China</p>
+          <div className="home-affiliation-list">
+            <div className="home-affiliation-item">
+              <h2>Jilin Agricultural University</h2>
+              <p>Changchun, Jilin, China</p>
+            </div>
+            <div className="home-affiliation-item">
+              <h2>Rice Research Institute, Guangdong Academy of Agricultural Sciences</h2>
+              <p>Guangzhou, Guangdong, China</p>
+            </div>
+          </div>
           <a className="home-utility-card__contact-link" href="mailto:cuicui001116@163.com">
             First author: cuicui001116@163.com
           </a>

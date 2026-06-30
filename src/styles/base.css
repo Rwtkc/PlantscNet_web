@@ -39,14 +39,14 @@ body,
 
 *::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
-  border-radius: 999rem;
+  border-radius: 0.6rem;
 }
 
 *::-webkit-scrollbar-thumb {
   background:
     linear-gradient(180deg, rgba(168, 212, 173, 0.98), var(--scrollbar-thumb));
   border: 2px solid rgba(244, 250, 236, 0.95);
-  border-radius: 999rem;
+  border-radius: 0.6rem;
 }
 
 *::-webkit-scrollbar-thumb:hover {

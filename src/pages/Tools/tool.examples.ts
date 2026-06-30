@@ -1,0 +1,36 @@
+const TOOL_EXAMPLE_GENES: Record<string, string[]> = {
+  ach: ['Actinidia03244', 'Actinidia09086', 'Actinidia22816', 'Actinidia31219', 'Actinidia30920'],
+  aly: ['AL1G10220', 'AL1G45940', 'AL3G48760', 'AL6G48090', 'AL6G19430'],
+  ath: ['AT1G01060', 'AT2G24990', 'AT1G15820', 'AT5G66190', 'AT1G17270'],
+  bdi: ['Bradi1g00219', 'Bradi5g03472', 'Bradi2g41237', 'Bradi5g19142', 'Bradi5g26961'],
+  bol: ['gene-LOC106292248', 'gene-LOC106309769', 'gene-LOC106302013', 'gene-LOC106313882', 'gene-LOC106342130'],
+  bra: ['ARF11', 'LOC103831986', 'LOC117131244', 'LOC103866952', 'LOC117133217'],
+  cas: ['Csa00382s290', 'Csa01g020330', 'Csa08g059270', 'Csa06g039080', 'Csa01g040160'],
+  cre: ['Cre07.g353500', 'Cre17.g729000', 'Cre03.g163750', 'Cre07.g323400', 'Cre11.g478350'],
+  cro: ['CRO_01G004530', 'CRO_03G030770', 'CRO_06G023160', 'CRO_03G021460', 'CRO_01G013780'],
+  cru: ['Carub.0001s0156', 'Carub.0003s2739', 'Carub.0007s0047', 'Carub.0004s0916', 'Carub.0001s2585'],
+  egr: ['Eucgr.A00102', 'Eucgr.E00554', 'Eucgr.D01775', 'Eucgr.I01800', 'Eucgr.I00618'],
+  esa: ['Thhalv10000026m.g', 'Thhalv10010354m.g', 'Thhalv10009483m.g', 'Thhalv10012485m.g', 'Thhalv10010168m.g'],
+  fve: ['gene00738-v1.0-hybrid', 'gene25039-v1.0-hybrid', 'gene25942-v1.0-hybrid', 'gene29717-v1.0-hybrid', 'gene30979-v1.0-hybrid'],
+  gar: ['Cotton_A_00064', 'Cotton_A_33119', 'Cotton_A_15790', 'Cotton_A_25911', 'Cotton_A_08518'],
+  ghi: ['Gh_A01G0151', 'Gh_D08G1578', 'Gh_D08G0505', 'Gh_A08G0924', 'Gh_D08G1650'],
+  gly: ['GLYMA_01G002100', 'GLYMA_18G024100', 'GLYMA_01G016800', 'GLYMA_17G135800', 'GLYMA_10G217700'],
+  lja: ['LotjaGi1g1v0126900', 'LotjaGi4g1v0074400', 'LotjaGi4g1v0136100', 'LotjaGi2g1v0284700', 'LotjaGi3g1v0096800'],
+  mes: ['Manes.01G065200', 'Manes.03G154700', 'Manes.05G021900', 'Manes.11G067500', 'Manes.13G046800'],
+  mtr: ['Medtr8g028655', 'Medtr6g018390', 'Medtr4g019900', 'Medtr1g011520', 'Medtr4g096930'],
+  osa: ['LOC_Os01g09550', 'LOC_Os07g43060', 'LOC_Os08g08840', 'LOC_Os04g39210', 'LOC_Os03g59250'],
+  pha: ['Pahal.A00033', 'Pahal.D03488', 'Pahal.I02916', 'Pahal.G02875', 'Pahal.B02674'],
+  phe: ['PH02Gene00916', 'PH02Gene07887', 'PH02Gene02733', 'PH02Gene06179', 'PH02Gene17667'],
+  ptr: ['Potri.001G015900', 'Potri.004G174700', 'Potri.006G144600', 'Potri.006G050000', 'Potri.013G046700'],
+  pvu: ['Phvul.001G008200', 'Phvul.010G000600', 'Phvul.003G199600', 'Phvul.011G119600', 'Phvul.011G197200'],
+  sbi: ['Sobic.006G233500', 'Sobic.001G407600', 'Sobic.004G073600', 'Sobic.002G417500', 'Sobic.009G016600'],
+  sly: ['Solyc01g008230.2', 'Solyc02g089560.2', 'Solyc02g062740.2', 'Solyc04g007890.2', 'Solyc05g052150.2'],
+  spa: ['Tp1g00020', 'Tp2g13110', 'Tp6g18570', 'Tp_un0079_020', 'Tp3g31010'],
+  svi: ['Sevir.1G003600', 'Sevir.6G101200', 'Sevir.4G097400', 'Sevir.3G156300', 'Sevir.8G115300'],
+  tae: ['TraesCS1A03G0081500', 'TraesCS1A03G0672700', 'TraesCS3D03G0660400', 'TraesCS3D03G0806400', 'TraesCS1B03G0884900'],
+  zea: ['GRMZM2G000818', 'GRMZM2G424241', 'GRMZM2G399641', 'GRMZM2G077596', 'GRMZM2G073427'],
+}
+
+export function getToolExampleGenes(speciesId: string) {
+  return TOOL_EXAMPLE_GENES[speciesId] ?? []
+}

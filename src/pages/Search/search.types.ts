@@ -1,3 +1,5 @@
+import type { DataModality } from '@/pages/Browse/browse.types'
+
 export interface SearchSpeciesOption {
   id: string
   label: string
@@ -22,6 +24,7 @@ export interface SearchSampleMatch {
 export interface SearchResponse {
   speciesId: string
   speciesLabel: string
+  modality?: DataModality
   mode: SearchMode
   query: string
   integratedNetworkAvailable: boolean
@@ -31,11 +34,4 @@ export interface SearchResponse {
     integratedMatchCount: number
     sampleMatchCount: number
   }
-}
-
-export interface SearchExampleResponse {
-  speciesId: string
-  speciesLabel: string
-  mode: SearchMode
-  query: string
 }

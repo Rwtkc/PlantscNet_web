@@ -103,6 +103,7 @@
   }
 
   .browse-page__sidebar {
+    height: auto;
     position: static;
     top: auto;
   }
@@ -123,6 +124,11 @@
 
   .search-module-grid {
     grid-template-columns: 1fr;
+  }
+
+  .search-modality-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .download-asset-grid {

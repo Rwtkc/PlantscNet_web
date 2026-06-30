@@ -4,9 +4,12 @@ export interface SpeciesOption {
   sampleCount: number
 }
 
+export type DataModality = 'rna' | 'atac'
+
 export interface SampleRecord {
   speciesLabel: string
   speciesId: string
+  modality?: DataModality
   fileName: string
   sampleId: string
   tissue: string
@@ -114,7 +117,7 @@ export interface SpeciesNetworkPreviewResponse {
   threshold: number
   recommendedThreshold?: number
   tfFilter: string | null
-  sourceKind?: 'species-preview' | 'single-sample'
+  sourceKind?: 'species-preview' | 'single-sample' | 'sample-aggregate'
   totalAvailableLinks: number
   totalNodes: number
   totalLinks: number
@@ -133,7 +136,7 @@ export interface SpeciesNetworkRelationsResponse {
   speciesLabel: string
   threshold: number
   tfFilter: string | null
-  sourceKind?: 'species-preview' | 'single-sample'
+  sourceKind?: 'species-preview' | 'single-sample' | 'sample-aggregate'
   pagination: {
     page: number
     pageSize: number

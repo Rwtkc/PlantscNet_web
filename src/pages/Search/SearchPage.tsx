@@ -3,21 +3,14 @@ import { flushSync } from 'react-dom'
 import { ModulePage } from '@/components/ModulePage'
 import { moduleContent } from '@/app/module-content'
 import { loadSearchSpeciesOptions, searchSpeciesNetwork } from './search.api'
+import type { DataModality } from '@/pages/Browse/browse.types'
 import type { SearchMode, SearchResponse, SearchSpeciesOption } from './search.types'
 import { SearchModulePanel } from './components/SearchModulePanel'
 import { SearchResultsPanel } from './components/SearchResultsPanel'
-
-const defaultTfExample = {
-  speciesId: 'ath',
-  query: 'AT2G35530',
-}
-
-const defaultTargetExample = {
-  speciesId: 'ath',
-  query: 'AT2G25460',
-}
+import { getSearchExample } from './search.examples'
 
 export default function SearchPage() {
+  const [modality, setModality] = useState<DataModality>('rna')
   const [speciesOptions, setSpeciesOptions] = useState<SearchSpeciesOption[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [tfSpeciesId, setTfSpeciesId] = useState('')
@@ -39,7 +32,7 @@ export default function SearchPage() {
 
     async function loadSpeciesOptions() {
       try {
-        const options = await loadSearchSpeciesOptions()
+        const options = await loadSearchSpeciesOptions(modality)
 
         if (!isCancelled) {
           setSpeciesOptions(options)
@@ -58,7 +51,52 @@ export default function SearchPage() {
     return () => {
       isCancelled = true
     }
-  }, [])
+  }, [modality])
+
+  const handleModalityChange = (nextModality: DataModality) => {
+    if (nextModality === modality) {
+      return
+    }
+
+    setModality(nextModality)
+    setTfSpeciesId('')
+    setTargetSpeciesId('')
+    setTfQuery('')
+    setTargetQuery('')
+    setTfResult(null)
+    setTargetResult(null)
+    setTfError(null)
+    setTargetError(null)
+    setTfSearched(false)
+    setTargetSearched(false)
+    setActiveResultMode(null)
+  }
+
+  const handleExampleClick = (
+    mode: SearchMode,
+    selectedSpeciesId: string,
+    setSpeciesId: (value: string) => void,
+    setQuery: (value: string) => void,
+    setError: (value: string | null) => void,
+  ) => {
+    const example = getSearchExample(
+      modality,
+      mode,
+      selectedSpeciesId || undefined,
+      speciesOptions.map((species) => species.id),
+    )
+
+    if (!example) {
+      setError('No preset example is available for the selected data layer.')
+      return
+    }
+
+    flushSync(() => {
+      setSpeciesId(example.speciesId)
+      setQuery(example.query)
+      setError(null)
+    })
+  }
 
   const handleSearch =
     (
@@ -104,7 +142,7 @@ export default function SearchPage() {
       setError(null)
 
       try {
-        const response = await searchSpeciesNetwork(speciesId, mode, query)
+        const response = await searchSpeciesNetwork(modality, speciesId, mode, query)
         setResult(response)
       } catch {
         setResult(null)
@@ -140,6 +178,45 @@ export default function SearchPage() {
 
   return (
     <ModulePage module={moduleContent.search} hideInfoSections>
+      <section className="search-modality-card fade-rise" aria-label="Search data layer">
+        <div>
+          <p className="search-modality-card__eyebrow">Data layer</p>
+          <h2>{modality === 'rna' ? 'scRNA regulatory networks' : 'scATAC regulatory networks'}</h2>
+        </div>
+        <div className="search-modality-switch" role="tablist" aria-label="Search data modality">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modality === 'rna'}
+            className={
+              modality === 'rna'
+                ? 'search-modality-switch__button search-modality-switch__button--active'
+                : 'search-modality-switch__button'
+            }
+            onClick={() => {
+              handleModalityChange('rna')
+            }}
+          >
+            scRNA
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modality === 'atac'}
+            className={
+              modality === 'atac'
+                ? 'search-modality-switch__button search-modality-switch__button--active'
+                : 'search-modality-switch__button'
+            }
+            onClick={() => {
+              handleModalityChange('atac')
+            }}
+          >
+            scATAC
+          </button>
+        </div>
+      </section>
+
       {loadError ? (
         <section className="extra-card fade-rise">
           <p className="search-table__empty search-table__empty--error">{loadError}</p>
@@ -159,11 +236,13 @@ export default function SearchPage() {
           onSpeciesChange={setTfSpeciesId}
           onQueryChange={setTfQuery}
           onExampleClick={() => {
-            flushSync(() => {
-              setTfSpeciesId(defaultTfExample.speciesId)
-              setTfQuery(defaultTfExample.query)
-              setTfError(null)
-            })
+            handleExampleClick(
+              'tf',
+              tfSpeciesId,
+              setTfSpeciesId,
+              setTfQuery,
+              setTfError,
+            )
           }}
           onSubmit={handleSearch(
             'tf',
@@ -186,11 +265,13 @@ export default function SearchPage() {
           onSpeciesChange={setTargetSpeciesId}
           onQueryChange={setTargetQuery}
           onExampleClick={() => {
-            flushSync(() => {
-              setTargetSpeciesId(defaultTargetExample.speciesId)
-              setTargetQuery(defaultTargetExample.query)
-              setTargetError(null)
-            })
+            handleExampleClick(
+              'target',
+              targetSpeciesId,
+              setTargetSpeciesId,
+              setTargetQuery,
+              setTargetError,
+            )
           }}
           onSubmit={handleSearch(
             'target',

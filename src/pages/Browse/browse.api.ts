@@ -8,11 +8,12 @@ import type {
   SpeciesNetworkRelationsResponse,
   SpeciesNetworkPreviewResponse,
   SpeciesOption,
+  DataModality,
 } from './browse.types'
 
 export const browsePageCache = {
-  browseIndexCache: null as BrowseIndexCacheEntry | null,
-  browseIndexRequest: null as Promise<BrowseIndexCacheEntry> | null,
+  browseIndexCacheStore: {} as Record<string, BrowseIndexCacheEntry>,
+  browseIndexRequestStore: {} as Record<string, Promise<BrowseIndexCacheEntry>>,
   speciesDetailCacheStore: {} as Record<string, SpeciesDetailCacheEntry>,
   speciesDetailRequestStore: {} as Record<string, Promise<SpeciesDetailCacheEntry>>,
   sampleDetailCacheStore: {} as Record<string, SampleDetailResponse>,
@@ -32,6 +33,11 @@ export const browsePageCache = {
     string,
     Promise<SpeciesNetworkRelationsResponse>
   >,
+}
+
+function appendModalityQuery(path: string, modality: DataModality, query = '') {
+  const separator = query ? '&' : '?'
+  return `${toApiPath(path)}${query}${separator}modality=${modality}`
 }
 
 async function loadCachedResource<T>(
@@ -64,31 +70,34 @@ async function loadCachedResource<T>(
 }
 
 export function buildSampleDetailCacheKey(
+  modality: DataModality,
   speciesId: string,
   sampleId: string,
   page: number,
   pageSize: number,
 ) {
-  return `${speciesId}|${sampleId}|${page}|${pageSize}`
+  return `${modality}|${speciesId}|${sampleId}|${page}|${pageSize}`
 }
 
 export function buildSpeciesNetworkRelationsCacheKey(
+  modality: DataModality,
   speciesId: string,
   page: number,
   pageSize: number,
   threshold: number,
   tfFilter: string,
 ) {
-  return `${speciesId}:${page}:${pageSize}:${threshold}:${tfFilter.trim().toLowerCase()}`
+  return `${modality}:${speciesId}:${page}:${pageSize}:${threshold}:${tfFilter.trim().toLowerCase()}`
 }
 
 export async function loadSpeciesDetails(
   species: SpeciesOption,
+  modality: DataModality,
 ): Promise<SpeciesDetailCacheEntry> {
   try {
     return {
       tfTargetCounts: await fetchJson<Record<string, number | null>>(
-        toApiPath(`/browse/species/${species.id}/tf-target-counts`),
+        appendModalityQuery(`/browse/species/${species.id}/tf-target-counts`, modality),
       ),
       detailError: null,
     }
@@ -102,17 +111,23 @@ export async function loadSpeciesDetails(
 }
 
 export async function loadSampleDetail(
+  modality: DataModality,
   speciesId: string,
   sampleId: string,
   page: number,
   pageSize: number,
 ): Promise<SampleDetailResponse> {
   return fetchJson<SampleDetailResponse>(
-    `${toApiPath(`/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}`)}?page=${page}&pageSize=${pageSize}`,
+    appendModalityQuery(
+      `/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}`,
+      modality,
+      `?page=${page}&pageSize=${pageSize}`,
+    ),
   )
 }
 
 export async function loadCachedSampleDetail(
+  modality: DataModality,
   speciesId: string,
   sampleId: string,
   page: number,
@@ -121,28 +136,34 @@ export async function loadCachedSampleDetail(
   return loadCachedResource(
     browsePageCache.sampleDetailCacheStore,
     browsePageCache.sampleDetailRequestStore,
-    buildSampleDetailCacheKey(speciesId, sampleId, page, pageSize),
-    () => loadSampleDetail(speciesId, sampleId, page, pageSize),
+    buildSampleDetailCacheKey(modality, speciesId, sampleId, page, pageSize),
+    () => loadSampleDetail(modality, speciesId, sampleId, page, pageSize),
   )
 }
 
 export function prefetchSampleDetail(
+  modality: DataModality,
   speciesId: string,
   sampleId: string,
   page: number,
   pageSize: number,
 ) {
-  void loadCachedSampleDetail(speciesId, sampleId, page, pageSize).catch(() => {})
+  void loadCachedSampleDetail(modality, speciesId, sampleId, page, pageSize).catch(() => {})
 }
 
 export async function loadSpeciesNetworkPreview(
+  modality: DataModality,
   speciesId: string,
   limit: number,
   threshold: number,
   tfFilter: string,
 ): Promise<SpeciesNetworkPreviewResponse> {
   const response = await fetchJson<SpeciesNetworkPreviewResponse>(
-    `${toApiPath(`/browse/species/${speciesId}/network-preview`)}?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    appendModalityQuery(
+      `/browse/species/${speciesId}/network-preview`,
+      modality,
+      `?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    ),
   )
 
   if (!Array.isArray(response.nodes) || !Array.isArray(response.links)) {
@@ -153,6 +174,7 @@ export async function loadSpeciesNetworkPreview(
 }
 
 export async function loadSampleNetworkPreview(
+  modality: DataModality,
   speciesId: string,
   sampleId: string,
   limit: number,
@@ -160,7 +182,11 @@ export async function loadSampleNetworkPreview(
   tfFilter: string,
 ): Promise<SpeciesNetworkPreviewResponse> {
   const response = await fetchJson<SpeciesNetworkPreviewResponse>(
-    `${toApiPath(`/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}/network-preview`)}?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    appendModalityQuery(
+      `/browse/species/${speciesId}/samples/${encodeURIComponent(sampleId)}/network-preview`,
+      modality,
+      `?limit=${limit}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    ),
   )
 
   if (!Array.isArray(response.nodes) || !Array.isArray(response.links)) {
@@ -171,6 +197,7 @@ export async function loadSampleNetworkPreview(
 }
 
 export async function loadSpeciesNetworkRelations(
+  modality: DataModality,
   speciesId: string,
   page: number,
   pageSize: number,
@@ -178,11 +205,16 @@ export async function loadSpeciesNetworkRelations(
   tfFilter: string,
 ): Promise<SpeciesNetworkRelationsResponse> {
   return fetchJson<SpeciesNetworkRelationsResponse>(
-    `${toApiPath(`/browse/species/${speciesId}/network-relations`)}?page=${page}&pageSize=${pageSize}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    appendModalityQuery(
+      `/browse/species/${speciesId}/network-relations`,
+      modality,
+      `?page=${page}&pageSize=${pageSize}&threshold=${threshold}${tfFilter ? `&tf=${encodeURIComponent(tfFilter)}` : ''}`,
+    ),
   )
 }
 
 export async function loadCachedSpeciesNetworkRelations(
+  modality: DataModality,
   speciesId: string,
   page: number,
   pageSize: number,
@@ -195,6 +227,7 @@ export async function loadCachedSpeciesNetworkRelations(
     browsePageCache.speciesNetworkRelationsCacheStore,
     browsePageCache.speciesNetworkRelationsRequestStore,
     buildSpeciesNetworkRelationsCacheKey(
+      modality,
       speciesId,
       page,
       pageSize,
@@ -203,6 +236,7 @@ export async function loadCachedSpeciesNetworkRelations(
     ),
     () =>
       loadSpeciesNetworkRelations(
+        modality,
         speciesId,
         page,
         pageSize,
@@ -213,6 +247,7 @@ export async function loadCachedSpeciesNetworkRelations(
 }
 
 export function prefetchSpeciesNetworkRelations(
+  modality: DataModality,
   speciesId: string,
   page: number,
   pageSize: number,
@@ -220,6 +255,7 @@ export function prefetchSpeciesNetworkRelations(
   tfFilter: string,
 ) {
   void loadCachedSpeciesNetworkRelations(
+    modality,
     speciesId,
     page,
     pageSize,
@@ -228,13 +264,15 @@ export function prefetchSpeciesNetworkRelations(
   ).catch(() => {})
 }
 
-export async function loadBrowseIndex(): Promise<BrowseIndexCacheEntry> {
+export async function loadBrowseIndex(modality: DataModality): Promise<BrowseIndexCacheEntry> {
   try {
-    const response = await fetchJson<BrowseIndexResponse>(toApiPath('/browse/index'))
+    const response = await fetchJson<BrowseIndexResponse>(
+      appendModalityQuery('/browse/index', modality),
+    )
 
     return {
       species: response.species,
-      samples: response.samples,
+      samples: response.samples.map((sample) => ({ ...sample, modality })),
       loadError: null,
     }
   } catch {
@@ -247,8 +285,13 @@ export async function loadBrowseIndex(): Promise<BrowseIndexCacheEntry> {
 }
 
 export function __resetBrowsePageCacheForTests() {
-  browsePageCache.browseIndexCache = null
-  browsePageCache.browseIndexRequest = null
+  for (const key of Object.keys(browsePageCache.browseIndexCacheStore)) {
+    delete browsePageCache.browseIndexCacheStore[key]
+  }
+
+  for (const key of Object.keys(browsePageCache.browseIndexRequestStore)) {
+    delete browsePageCache.browseIndexRequestStore[key]
+  }
 
   for (const key of Object.keys(browsePageCache.speciesDetailCacheStore)) {
     delete browsePageCache.speciesDetailCacheStore[key]

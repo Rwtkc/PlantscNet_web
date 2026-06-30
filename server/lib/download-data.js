@@ -41,18 +41,13 @@ const assetCatalog = [
   },
   {
     key: 'final-regulatory',
-    directoryName: 'final_regulatory_file',
-    envVar: 'PLANTSCNET_FINAL_REGULATORY_DIR',
+    directoryName: 'data',
+    envVar: 'PLANTSCNET_DATA_DIR',
     variants: [
       {
-        label: 'Final regulatory network (XGBoost)',
-        description: 'Model-trained integrated final regulatory network file.',
-        fileName: 'final_regulatory.tsv',
-      },
-      {
-        label: 'Final regulatory network (pySCENIC)',
-        description: 'Single-sample pySCENIC-derived final regulatory network file.',
-        fileName: 'final_regulatory.txt',
+        label: 'Integrated regulatory network',
+        description: 'Species-level integrated TF-target network with regulatory probability scores.',
+        fileName: 'final_regulatory_with_probability.tsv',
       },
     ],
   },

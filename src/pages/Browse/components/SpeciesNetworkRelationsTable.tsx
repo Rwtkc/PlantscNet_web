@@ -2,6 +2,18 @@ import type { SpeciesNetworkRelationsResponse } from '../browse.types'
 import { formatNetworkMetric } from '../browse.utils'
 import { SampleDetailPaginationControls } from './PaginationControls'
 
+function formatRelationMetric(value: number, isSampleAggregateSource: boolean) {
+  if (!isSampleAggregateSource) {
+    return formatNetworkMetric(value)
+  }
+
+  if (!Number.isFinite(value)) {
+    return '-'
+  }
+
+  return String(Math.trunc(value))
+}
+
 export function SpeciesNetworkRelationsTable({
   relations,
   isLoading,
@@ -12,18 +24,29 @@ export function SpeciesNetworkRelationsTable({
   onPageChange: (page: number) => void
 }) {
   const isSingleSampleSource = relations.sourceKind === 'single-sample'
-  const metricLabel = isSingleSampleSource ? 'Importance Score' : 'Probability'
+  const isSampleAggregateSource = relations.sourceKind === 'sample-aggregate'
+  const metricLabel = isSampleAggregateSource
+    ? 'Samples'
+    : isSingleSampleSource
+    ? 'Importance Score'
+    : 'Probability'
+  const title = isSampleAggregateSource
+    ? 'Sample-derived TF-target relations'
+    : isSingleSampleSource
+    ? 'Single-sample regulatory relations'
+    : 'Integrated regulatory relations'
+  const description = isSampleAggregateSource
+    ? 'Showing TF-target relations observed across the scRNA samples for this species.'
+    : isSingleSampleSource
+    ? 'Showing species-level pySCENIC TF-target relations from the available sample-derived network.'
+    : 'Showing species-integrated TF-target relations from the high-confidence network defined in the paper (Probability >= 0.5).'
   const pageStart = (relations.pagination.page - 1) * relations.pagination.pageSize
 
   return (
     <div className="browse-panel">
       <div className="browse-panel__header">
-        <h2>Integrated regulatory relations</h2>
-        <p>
-          {isSingleSampleSource
-            ? 'Showing species-level pySCENIC TF-target relations from the available sample-derived network.'
-            : 'Showing species-integrated TF-target relations from the high-confidence network defined in the paper (Probability >= 0.5).'}
-        </p>
+        <h2>{title}</h2>
+        <p>{description}</p>
       </div>
 
       <div className="browse-table-wrap browse-table-wrap--loading-shell">
@@ -40,7 +63,7 @@ export function SpeciesNetworkRelationsTable({
               <tr key={`${row.tf}-${row.target}-${index}`}>
                 <td>{row.tf}</td>
                 <td>{row.target}</td>
-                <td>{formatNetworkMetric(row.probability)}</td>
+                <td>{formatRelationMetric(row.probability, isSampleAggregateSource)}</td>
               </tr>
             ))}
           </tbody>
@@ -48,7 +71,7 @@ export function SpeciesNetworkRelationsTable({
         {isLoading ? (
           <div
             className="browse-table-wrap__loading"
-            aria-label="Loading integrated regulatory relations"
+            aria-label={`Loading ${title.toLowerCase()}`}
             aria-live="polite"
           >
             <span className="browse-table-wrap__spinner" aria-hidden="true" />
@@ -57,7 +80,7 @@ export function SpeciesNetworkRelationsTable({
       </div>
 
       {relations.pagination.totalPages > 1 ? (
-        <div className="browse-table-pagination" aria-label="Integrated regulatory relations pagination">
+        <div className="browse-table-pagination" aria-label={`${title} pagination`}>
           <p className="browse-table-pagination__summary">
             Showing {pageStart + 1}-
             {Math.min(pageStart + relations.pagination.pageSize, relations.pagination.totalRows)} of{' '}

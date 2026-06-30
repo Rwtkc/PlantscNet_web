@@ -3,6 +3,8 @@ import { SampleDetailPaginationControls } from '@/pages/Browse/components/Pagina
 import { formatImportanceScore, formatNetworkMetric } from '@/pages/Browse/browse.utils'
 import { exportIntegratedMatches, exportSampleMatches } from '../search.export'
 import type { SearchResponse } from '../search.types'
+import '@/styles/browse-table.css'
+import '@/styles/search-results.css'
 
 function normalizeSearchText(value: string) {
   return value.trim().toLowerCase()
@@ -145,49 +147,19 @@ export function SearchResultsPanel({
       <section className="search-result-block">
         <div className="search-result-block__header">
           <div>
-            <h3>Integrated species network matches</h3>
-            <p>
-              {result.integratedNetworkAvailable
-                ? `${result.summary.integratedMatchCount} match(es) from final_regulatory_with_probability.tsv.`
-                : 'No integrated final network is available for this species.'}
-            </p>
+            <h3>
+              Integrated species network matches{' '}
+              <span className="search-result-block__count">
+                (
+                {result.integratedNetworkAvailable
+                  ? `${result.summary.integratedMatchCount} match(es)`
+                  : 'no integrated final network available'}
+                )
+              </span>
+            </h3>
           </div>
-          {filteredIntegratedRows.length > 0 ? (
+          {result.integratedMatches.length > 0 ? (
             <div className="search-result-block__actions">
-              <button
-                type="button"
-                className="search-export-button"
-                onClick={() => {
-                  exportIntegratedMatches(filteredIntegratedRows, {
-                    speciesLabel: result.speciesLabel,
-                    query: result.query,
-                    format: 'csv',
-                    includeSpecies: showSpeciesColumn,
-                  })
-                }}
-              >
-                Export CSV
-              </button>
-              <button
-                type="button"
-                className="search-export-button"
-                onClick={() => {
-                  exportIntegratedMatches(filteredIntegratedRows, {
-                    speciesLabel: result.speciesLabel,
-                    query: result.query,
-                    format: 'txt',
-                    includeSpecies: showSpeciesColumn,
-                  })
-                }}
-              >
-                Export TXT
-              </button>
-            </div>
-          ) : null}
-        </div>
-        {result.integratedMatches.length > 0 ? (
-          <>
-            <div className="search-table-toolbar">
               <input
                 className="query-input search-table-filter"
                 value={integratedFilter}
@@ -196,7 +168,43 @@ export function SearchResultsPanel({
                 }}
                 placeholder="Filter current integrated table"
               />
+              {filteredIntegratedRows.length > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    className="search-export-button"
+                    onClick={() => {
+                      exportIntegratedMatches(filteredIntegratedRows, {
+                        speciesLabel: result.speciesLabel,
+                        query: result.query,
+                        format: 'csv',
+                        includeSpecies: showSpeciesColumn,
+                      })
+                    }}
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    className="search-export-button"
+                    onClick={() => {
+                      exportIntegratedMatches(filteredIntegratedRows, {
+                        speciesLabel: result.speciesLabel,
+                        query: result.query,
+                        format: 'txt',
+                        includeSpecies: showSpeciesColumn,
+                      })
+                    }}
+                  >
+                    Export TXT
+                  </button>
+                </>
+              ) : null}
             </div>
+          ) : null}
+        </div>
+        {result.integratedMatches.length > 0 ? (
+          <>
             <div className="search-table-wrap">
               <table
                 className={`search-table ${
@@ -260,45 +268,15 @@ export function SearchResultsPanel({
       <section className="search-result-block">
         <div className="search-result-block__header">
           <div>
-            <h3>Sample-derived pySCENIC matches</h3>
-            <p>{result.summary.sampleMatchCount} match(es) from sample-level TF-target files.</p>
+            <h3>
+              Sample-level network matches{' '}
+              <span className="search-result-block__count">
+                ({result.summary.sampleMatchCount} match(es) from sample-level TF-target files)
+              </span>
+            </h3>
           </div>
-          {filteredSampleRows.length > 0 ? (
+          {result.sampleMatches.length > 0 ? (
             <div className="search-result-block__actions">
-              <button
-                type="button"
-                className="search-export-button"
-                onClick={() => {
-                  exportSampleMatches(filteredSampleRows, {
-                    speciesLabel: result.speciesLabel,
-                    query: result.query,
-                    format: 'csv',
-                    includeSpecies: showSpeciesColumn,
-                  })
-                }}
-              >
-                Export CSV
-              </button>
-              <button
-                type="button"
-                className="search-export-button"
-                onClick={() => {
-                  exportSampleMatches(filteredSampleRows, {
-                    speciesLabel: result.speciesLabel,
-                    query: result.query,
-                    format: 'txt',
-                    includeSpecies: showSpeciesColumn,
-                  })
-                }}
-              >
-                Export TXT
-              </button>
-            </div>
-          ) : null}
-        </div>
-        {result.sampleMatches.length > 0 ? (
-          <>
-            <div className="search-table-toolbar">
               <input
                 className="query-input search-table-filter"
                 value={sampleFilter}
@@ -307,7 +285,43 @@ export function SearchResultsPanel({
                 }}
                 placeholder="Filter current sample-derived table"
               />
+              {filteredSampleRows.length > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    className="search-export-button"
+                    onClick={() => {
+                      exportSampleMatches(filteredSampleRows, {
+                        speciesLabel: result.speciesLabel,
+                        query: result.query,
+                        format: 'csv',
+                        includeSpecies: showSpeciesColumn,
+                      })
+                    }}
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    className="search-export-button"
+                    onClick={() => {
+                      exportSampleMatches(filteredSampleRows, {
+                        speciesLabel: result.speciesLabel,
+                        query: result.query,
+                        format: 'txt',
+                        includeSpecies: showSpeciesColumn,
+                      })
+                    }}
+                  >
+                    Export TXT
+                  </button>
+                </>
+              ) : null}
             </div>
+          ) : null}
+        </div>
+        {result.sampleMatches.length > 0 ? (
+          <>
             <div className="search-table-wrap">
               <table
                 className={`search-table ${
